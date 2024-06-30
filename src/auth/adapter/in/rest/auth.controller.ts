@@ -5,7 +5,10 @@ import {
   UnauthorizedException,
   Inject,
   ConflictException,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthUseCase } from '../../../application/port/in/auth.use-case';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -20,21 +23,64 @@ export class AuthController {
     @Inject('AuthUseCase')
     private readonly authUseCase: AuthUseCase,
   ) {}
+
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     try {
       const command = new LoginCommand(loginDto.email, loginDto.password);
-      return await this.authUseCase.login(command);
+      const { accessToken, refreshToken } = await this.authUseCase.login(
+        command,
+      );
+
+      // Set cookies
+      response.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+      response.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/auth/refresh', // Only send the refresh token for refresh requests
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      return response
+        .status(HttpStatus.OK)
+        .json({ message: 'Login successful' });
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
     }
   }
 
   @Post('refresh')
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+  async refreshToken(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     try {
       const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
-      return await this.authUseCase.refreshToken(command);
+      const { accessToken, refreshToken } = await this.authUseCase.refreshToken(
+        command,
+      );
+
+      // Set new cookies
+      response.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+      response.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/auth/refresh',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      return response
+        .status(HttpStatus.OK)
+        .json({ message: 'Token refreshed successfully' });
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
