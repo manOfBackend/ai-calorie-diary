@@ -68,14 +68,26 @@ jobs:
         run: pnpm lint
 
       - name: Run tests
-        run: pnpm test --json --outputFile=test-results.json
+        run: pnpm test
         continue-on-error: true
         id: run_tests
 
+      - name: Save test results
+        if: always()
+        run: |
+          echo "${{ steps.run_tests.outputs.stdout }}" > test-results.txt
+          echo "${{ steps.run_tests.outputs.stderr }}" >> test-results.txt
+
       - name: Run e2e tests
-        run: pnpm test:e2e --json --outputFile=e2e-test-results.json
+        run: pnpm test:e2e
         continue-on-error: true
         id: run_e2e_tests
+
+      - name: Save e2e test results
+        if: always()
+        run: |
+          echo "${{ steps.run_e2e_tests.outputs.stdout }}" > e2e-test-results.txt
+          echo "${{ steps.run_e2e_tests.outputs.stderr }}" >> e2e-test-results.txt
 
       - name: Check test results
         id: check_tests
