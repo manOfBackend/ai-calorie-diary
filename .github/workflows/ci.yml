@@ -25,6 +25,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/ai-cal-diary?schema=public
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - uses: actions/checkout@v2
 
@@ -36,7 +39,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 6.32.9
+          version: 6.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -56,6 +59,9 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm prisma generate
+
+      - name: Run Prisma migrations
+        run: pnpm prisma migrate deploy
 
       - name: Run linter
         run: pnpm lint
