@@ -7,9 +7,10 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
+    outputs:
+      tests_passed: ${{ steps.check_tests.outputs.tests_passed }}
     services:
       postgres:
         image: postgres:13
@@ -29,10 +30,10 @@ jobs:
       DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/ai-cal-diary?schema=public
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '16'
 
@@ -55,7 +56,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
         run: pnpm prisma generate
@@ -67,17 +68,30 @@ jobs:
         run: pnpm lint
 
       - name: Run tests
-        run: pnpm test
+        run: pnpm test --json --outputFile=test-results.json
+        continue-on-error: true
+        id: run_tests
         env:
           DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/ai-cal-diary?schema=public
 
       - name: Run e2e tests
-        run: pnpm test:e2e
+        run: pnpm test:e2e --json --outputFile=e2e-test-results.json
+        continue-on-error: true
+        id: run_e2e_tests
         env:
           DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/ai-cal-diary?schema=public
 
-      - name: Build
-        run: pnpm build
+      - name: Check test results
+        id: check_tests
+        if: always()
+        run: |
+          if [ "${{ steps.run_tests.outcome }}" != "success" ] || [ "${{ steps.run_e2e_tests.outcome }}" != "success" ]; then
+            echo "::set-output name=tests_passed::false"
+            exit 1
+          else
+            echo "::set-output name=tests_passed::true"
+          fi
+
 
       - name: Post test results
         if: github.event_name == 'pull_request'
@@ -85,22 +99,92 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const testResult = '${{ steps.run_tests.outcome }}' === 'success' ? '✅' : '❌';
-            const e2eTestResult = '${{ steps.run_e2e_tests.outcome }}' === 'success' ? '✅' : '❌';
+            const fs = require('fs');
+            
+            function parseTestResults(filePath) {
+              const rawData = fs.readFileSync(filePath, 'utf8');
+              const resultData = JSON.parse(rawData);
+              let resultString = '';
+            
+              resultData.testResults.forEach(testFile => {
+                resultString += `\n### ${testFile.name}\n`;
+                testFile.assertionResults.forEach(test => {
+                  const status = test.status === 'passed' ? '✅' : '❌';
+                  resultString += `${status} ${test.title}\n`;
+                });
+              });
+            
+              return resultString;
+            }
+            
+            let commentBody = '## 테스트 결과\n';
+            
+            try {
+              commentBody += '\n### Unit Tests\n';
+              commentBody += parseTestResults('test-results.json');
+            } catch (error) {
+              commentBody += '\nUnit test results parsing failed.\n';
+            }
+            
+            try {
+              commentBody += '\n### E2E Tests\n';
+              commentBody += parseTestResults('e2e-test-results.json');
+            } catch (error) {
+              commentBody += '\nE2E test results parsing failed.\n';
+            }
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `테스트 결과:
-              - 유닛 테스트: ${testResult}
-              - E2E 테스트: ${e2eTestResult}`
-            })
+              body: commentBody
+            });
 
-      - name: Check test results
-        if: always()
+  build:
+    needs: test
+    if: needs.test.outputs.tests_passed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 6.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
         run: |
-          if [ "${{ steps.run_tests.outcome }}" != "success" ] || [ "${{ steps.run_e2e_tests.outcome }}" != "success" ]; then
-            echo "Some tests failed"
-            exit 1
-          fi
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Post build success
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## 빌드 성공 ✅\n프로젝트 빌드가 성공적으로 완료되었습니다.'
+            });
