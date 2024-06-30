@@ -29,12 +29,12 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '20'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -146,18 +146,19 @@ jobs:
               repo: context.repo.repo,
               body: commentBody
             });
-
+    outputs:
+      tests_passed: ${{ steps.check_tests.outputs.tests_passed }}
   build:
     needs: test
     if: needs.test.outputs.tests_passed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '20'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
