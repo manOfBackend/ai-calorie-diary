@@ -78,3 +78,26 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+
+      - name: Post test results
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const testResult = '${{ steps.run_tests.outcome }}' === 'success' ? '✅' : '❌';
+            const e2eTestResult = '${{ steps.run_e2e_tests.outcome }}' === 'success' ? '✅' : '❌';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `테스트 결과:
+              - 유닛 테스트: ${testResult}
+              - E2E 테스트: ${e2eTestResult}`
+            })
+            
+            if (testResult === '❌' || e2eTestResult === '❌') {
+              core.setFailed('Some tests failed');
+            }
