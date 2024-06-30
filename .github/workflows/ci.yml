@@ -83,7 +83,9 @@ jobs:
           echo "${{ steps.run_tests.outputs.stderr }}" >> test-results.txt
 
       - name: Run e2e tests
-        run: pnpm test:e2e -- --json --outputFile=e2e-test-results.json
+        run: |
+          pnpm prisma migrate deploy
+          pnpm exec jest --config ./test/jest-e2e.json --json --outputFile=e2e-test-results.json
         continue-on-error: true
         id: run_e2e_tests
 
