@@ -1,0 +1,61 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../../common/prisma/prisma.service';
+import { UserRepositoryPort } from '../../../application/port/out/user-repository.port';
+import { User } from '../../../domain/user';
+import { RefreshToken } from '../../../domain/refresh-token';
+
+@Injectable()
+export class UserRepositoryAdapter implements UserRepositoryPort {
+  constructor(private prisma: PrismaService) {}
+
+  async findByEmail(email: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    return user
+      ? new User(
+          user.id,
+          user.email,
+          user.password,
+          user.createdAt,
+          user.updatedAt,
+        )
+      : null;
+  }
+
+  async saveRefreshToken(
+    userId: number,
+    token: string,
+    expiresAt: Date,
+  ): Promise<RefreshToken> {
+    const refreshToken = await this.prisma.refreshToken.upsert({
+      where: { userId: userId },
+      update: { token: token, expiresAt: expiresAt },
+      create: { userId: userId, token: token, expiresAt: expiresAt },
+    });
+    return new RefreshToken(
+      refreshToken.id,
+      refreshToken.token,
+      refreshToken.userId,
+      refreshToken.expiresAt,
+      refreshToken.createdAt,
+    );
+  }
+
+  async findRefreshToken(userId: number): Promise<RefreshToken | null> {
+    const refreshToken = await this.prisma.refreshToken.findUnique({
+      where: { userId },
+    });
+    return refreshToken
+      ? new RefreshToken(
+          refreshToken.id,
+          refreshToken.token,
+          refreshToken.userId,
+          refreshToken.expiresAt,
+          refreshToken.createdAt,
+        )
+      : null;
+  }
+
+  async deleteRefreshToken(userId: number): Promise<void> {
+    await this.prisma.refreshToken.delete({ where: { userId } });
+  }
+}
