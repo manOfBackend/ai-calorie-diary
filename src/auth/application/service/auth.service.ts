@@ -1,10 +1,17 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthUseCase } from '../port/in/auth.use-case';
 import { UserRepositoryPort } from '../port/out/user-repository.port';
 import { LoginCommand } from '../port/in/dto/login.command';
 import { RefreshTokenCommand } from '../port/in/dto/refresh-token.command';
+import { RegisterCommand } from '../port/in/dto/register.command';
+import { User } from '../../domain/user';
 
 @Injectable()
 export class AuthService implements AuthUseCase {
@@ -74,5 +81,23 @@ export class AuthService implements AuthUseCase {
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  async register(command: RegisterCommand): Promise<User> {
+    const existingUser = await this.userRepository.findByEmail(command.email);
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(command.password, 10);
+    const user = new User(
+      null,
+      command.email,
+      hashedPassword,
+      new Date(),
+      new Date(),
+    );
+
+    return this.userRepository.save(user);
   }
 }

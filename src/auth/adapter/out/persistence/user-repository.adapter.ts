@@ -21,6 +21,22 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
       : null;
   }
 
+  async save(user: User): Promise<User> {
+    const savedUser = await this.prisma.user.create({
+      data: {
+        email: user.email,
+        password: user.password,
+      },
+    });
+    return new User(
+      savedUser.id,
+      savedUser.email,
+      savedUser.password,
+      savedUser.createdAt,
+      savedUser.updatedAt,
+    );
+  }
+
   async saveRefreshToken(
     userId: number,
     token: string,

@@ -3,6 +3,7 @@ import { RefreshToken } from '../../../domain/refresh-token';
 
 export interface UserRepositoryPort {
   findByEmail(email: string): Promise<User | null>;
+  save(user: User): Promise<User>;
   saveRefreshToken(
     userId: number,
     token: string,
