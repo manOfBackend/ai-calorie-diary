@@ -79,9 +79,8 @@ jobs:
       - name: Build
         run: pnpm build
 
-
       - name: Post test results
-        if: always()
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -97,7 +96,11 @@ jobs:
               - 유닛 테스트: ${testResult}
               - E2E 테스트: ${e2eTestResult}`
             })
-            
-            if (testResult === '❌' || e2eTestResult === '❌') {
-              core.setFailed('Some tests failed');
-            }
+
+      - name: Check test results
+        if: always()
+        run: |
+          if [ "${{ steps.run_tests.outcome }}" != "success" ] || [ "${{ steps.run_e2e_tests.outcome }}" != "success" ]; then
+            echo "Some tests failed"
+            exit 1
+          fi
