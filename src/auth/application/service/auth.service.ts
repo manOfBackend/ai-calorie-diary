@@ -31,10 +31,10 @@ export class AuthService implements AuthUseCase {
 
     const payload = { sub: user.id, email: user.email };
     const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '9d' });
 
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    expiresAt.setDate(expiresAt.getDate() + 9);
     await this.userRepository.saveRefreshToken(
       user.id,
       refreshToken,
