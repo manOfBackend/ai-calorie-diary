@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="971" height="450" alt="image" src="https://github.com/manOfBackend/ai-calorie-diary/assets/74768098/4dd1a702-7e64-488d-900f-b490f2684564">
+  <img width="571" alt="image" src="https://github.com/manOfBackend/ai-calorie-diary/assets/74768098/4dd1a702-7e64-488d-900f-b490f2684564">
 </p>
 
 ## 개요
