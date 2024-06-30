@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+  checks: write
+  statuses: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -68,7 +75,7 @@ jobs:
         run: pnpm lint
 
       - name: Run tests
-        run: pnpm test
+        run: pnpm test -- --json --outputFile=test-results.json
         continue-on-error: true
         id: run_tests
 
@@ -79,7 +86,9 @@ jobs:
           echo "${{ steps.run_tests.outputs.stderr }}" >> test-results.txt
 
       - name: Run e2e tests
-        run: pnpm test:e2e
+        run: |
+          pnpm prisma migrate deploy
+          pnpm exec jest --config ./test/jest-e2e.json --json --outputFile=e2e-test-results.json
         continue-on-error: true
         id: run_e2e_tests
 
@@ -148,6 +157,7 @@ jobs:
             });
     outputs:
       tests_passed: ${{ steps.check_tests.outputs.tests_passed }}
+
   build:
     needs: test
     if: needs.test.outputs.tests_passed == 'true'
