@@ -16,7 +16,9 @@ import { LoginCommand } from '../../../application/port/in/dto/login.command';
 import { RefreshTokenCommand } from '../../../application/port/in/dto/refresh-token.command';
 import { RegisterCommand } from '../../../application/port/in/dto/register.command';
 import { RegisterDto } from './dto/register.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -24,6 +26,9 @@ export class AuthController {
     private readonly authUseCase: AuthUseCase,
   ) {}
 
+  @ApiOperation({ summary: '사용자 로그인' })
+  @ApiResponse({ status: 200, description: '로그인 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -55,6 +60,9 @@ export class AuthController {
     }
   }
 
+  @ApiOperation({ summary: '토큰 갱신' })
+  @ApiResponse({ status: 200, description: '토큰 갱신 성공' })
+  @ApiResponse({ status: 401, description: '토큰 갱신 실패' })
   @Post('refresh')
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
@@ -86,6 +94,9 @@ export class AuthController {
     }
   }
 
+  @ApiOperation({ summary: '사용자 등록' })
+  @ApiResponse({ status: 200, description: '등록 성공' })
+  @ApiResponse({ status: 401, description: '등록 실패' })
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     try {
