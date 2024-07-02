@@ -19,6 +19,8 @@ jobs:
     outputs:
       ci_skipped: ${{ steps.check_previous_ci.outputs.ci_skipped }}
     steps:
+      - uses: actions/checkout@v4
+        
       - name: Check if commit has already passed CI
         id: check_previous_ci
         run: |
