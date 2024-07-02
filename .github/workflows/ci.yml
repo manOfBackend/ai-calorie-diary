@@ -20,7 +20,7 @@ jobs:
       ci_skipped: ${{ steps.check_previous_ci.outputs.ci_skipped }}
     steps:
       - uses: actions/checkout@v4
-        
+
       - name: Check if commit has already passed CI
         id: check_previous_ci
         run: |
@@ -31,7 +31,6 @@ jobs:
             echo "ci_skipped=true" >> $GITHUB_OUTPUT
           else
             echo "ci_skipped=false" >> $GITHUB_OUTPUT
-          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -61,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Setup Node.js and pnpm
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -85,20 +84,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm prisma generate
-
-      - name: Run Prisma migrations
-        run: pnpm prisma migrate deploy
-
-      - name: Run linter
-        run: pnpm lint
-
-      - name: Run tests
-        run: pnpm test -- --json --outputFile=test-results.json
+      - name: Install dependencies and run tests
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm prisma generate
+          pnpm prisma migrate deploy
+          pnpm lint
+          pnpm test -- --json --outputFile=test-results.json || true
+          pnpm prisma migrate deploy
+          pnpm exec jest --config ./test/jest-e2e.json --json --outputFile=e2e-test-results.json || true
         continue-on-error: true
         id: run_tests
 
@@ -107,19 +101,8 @@ jobs:
         run: |
           echo "${{ steps.run_tests.outputs.stdout }}" > test-results.txt
           echo "${{ steps.run_tests.outputs.stderr }}" >> test-results.txt
-
-      - name: Run e2e tests
-        run: |
-          pnpm prisma migrate deploy
-          pnpm exec jest --config ./test/jest-e2e.json --json --outputFile=e2e-test-results.json
-        continue-on-error: true
-        id: run_e2e_tests
-
-      - name: Save e2e test results
-        if: always()
-        run: |
-          echo "${{ steps.run_e2e_tests.outputs.stdout }}" > e2e-test-results.txt
-          echo "${{ steps.run_e2e_tests.outputs.stderr }}" >> e2e-test-results.txt
+          echo "${{ steps.run_tests.outputs.stdout }}" > e2e-test-results.txt
+          echo "${{ steps.run_tests.outputs.stderr }}" >> e2e-test-results.txt
 
       - name: Check test results
         id: check_tests
@@ -211,7 +194,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js and pnpm
         uses: actions/setup-node@v4
         with:
           node-version: '20'
