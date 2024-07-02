@@ -16,6 +16,8 @@ permissions:
 jobs:
   check_previous_ci:
     runs-on: ubuntu-latest
+    outputs:
+      ci_skipped: ${{ steps.check_previous_ci.outputs.ci_skipped }}
     steps:
       - name: Check if commit has already passed CI
         id: check_previous_ci
@@ -24,15 +26,15 @@ jobs:
           PR_STATUS=$(gh api -H "Accept: application/vnd.github.v3+json" /repos/${{ github.repository }}/commits/${COMMIT_SHA}/status | jq -r '.state')
           if [ "$PR_STATUS" == "success" ]; then
             echo "CI has already passed for this commit. Skipping further steps."
-            echo "ci_skipped=true" >> $GITHUB_ENV
+            echo "ci_skipped=true" >> $GITHUB_OUTPUT
           else
-            echo "ci_skipped=false" >> $GITHUB_ENV
+            echo "ci_skipped=false" >> $GITHUB_OUTPUT
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
-    if: env.ci_skipped != 'true'
+    if: needs.check_previous_ci.outputs.ci_skipped != 'true'
     runs-on: ubuntu-latest
     needs: check_previous_ci
     services:
@@ -201,8 +203,8 @@ jobs:
       tests_passed: ${{ steps.check_tests.outputs.tests_passed }}
 
   build:
-    needs: test
-    if: needs.test.outputs.tests_passed == 'true' && env.ci_skipped != 'true'
+    needs: [check_previous_ci, test]
+    if: needs.test.outputs.tests_passed == 'true' && needs.check_previous_ci.outputs.ci_skipped != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
