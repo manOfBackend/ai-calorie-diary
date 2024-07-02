@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: guswhd12
-      POSTGRES_DB: ai-cal-diary
+      POSTGRES_DB: claude-cal-diary
     ports:
       - "5432:5432"
     volumes:

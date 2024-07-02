@@ -22,7 +22,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: guswhd12
-          POSTGRES_DB: ai-cal-diary
+          POSTGRES_DB: claude-cal-diary
         ports:
           - 5432:5432
         options: >-
@@ -32,7 +32,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/ai-cal-diary?schema=public
+      DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/claude-cal-diary?schema=public
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
