@@ -17,7 +17,7 @@ class MockClaudeApiAdapter implements ClaudeApiPort {
   }
 
   async singleResponse(prompt: string): Promise<{ content: string }> {
-    return { content: 'This is a mock response from Claude API.' };
+    return { content: `This is a mock response from Claude API. :: ${prompt}` };
   }
 }
 
