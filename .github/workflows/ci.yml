@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8.6.11'
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: guswhd12
+  POSTGRES_DB: claude-cal-diary
+  DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/claude-cal-diary?schema=public
+
 permissions:
   issues: write
   pull-requests: write
@@ -14,37 +22,15 @@ permissions:
   statuses: write
 
 jobs:
-  check_previous_ci:
+  test-and-build:
     runs-on: ubuntu-latest
-    outputs:
-      ci_skipped: ${{ steps.check_previous_ci.outputs.ci_skipped }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check if commit has already passed CI
-        id: check_previous_ci
-        run: |
-          COMMIT_SHA=$(git rev-parse HEAD)
-          PR_STATUS=$(gh api -H "Accept: application/vnd.github.v3+json" /repos/${{ github.repository }}/commits/${COMMIT_SHA}/status | jq -r '.state')
-          if [ "$PR_STATUS" == "success" ]; then
-            echo "CI has already passed for this commit. Skipping further steps."
-            echo "ci_skipped=true" >> $GITHUB_OUTPUT
-          else
-            echo "ci_skipped=false" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  test:
-    if: needs.check_previous_ci.outputs.ci_skipped != 'true'
-    runs-on: ubuntu-latest
-    needs: check_previous_ci
     services:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: guswhd12
-          POSTGRES_DB: claude-cal-diary
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
@@ -53,156 +39,18 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    env:
-      DATABASE_URL: postgresql://postgres:guswhd12@localhost:5432/claude-cal-diary?schema=public
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js and pnpm
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8.6.11
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies and run tests
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm prisma generate
-          pnpm prisma migrate deploy
-          pnpm lint
-          pnpm test -- --json --outputFile=test-results.json || true
-          pnpm prisma migrate deploy
-          pnpm exec jest --config ./test/jest-e2e.json --json --outputFile=e2e-test-results.json || true
-        continue-on-error: true
-        id: run_tests
-
-      - name: Save test results
-        if: always()
-        run: |
-          echo "${{ steps.run_tests.outputs.stdout }}" > test-results.txt
-          echo "${{ steps.run_tests.outputs.stderr }}" >> test-results.txt
-          echo "${{ steps.run_tests.outputs.stdout }}" > e2e-test-results.txt
-          echo "${{ steps.run_tests.outputs.stderr }}" >> e2e-test-results.txt
-
-      - name: Check test results
-        id: check_tests
-        if: always()
-        run: |
-          function checkTestOutcome {
-            local testFile=$1
-            local outcome="success"
-            local results=$(cat $testFile)
-          
-            for test in $(echo "$results" | jq -r '.testResults[] | .assertionResults[] | @base64'); do
-              _jq() {
-                echo ${test} | base64 --decode | jq -r ${1}
-              }
-
-              status=$(_jq '.status')
-              if [[ "$status" == "failed" ]]; then
-                outcome="failed"
-                break
-              fi
-            done
-          
-            echo $outcome
-          }
-
-          testOutcome=$(checkTestOutcome 'test-results.json')
-          e2eTestOutcome=$(checkTestOutcome 'e2e-test-results.json')
-
-          if [ "$testOutcome" != "success" ] || [ "$e2eTestOutcome" != "success" ]; then
-            echo "tests_passed=false" >> $GITHUB_OUTPUT
-            exit 1
-          else
-            echo "tests_passed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Post test results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const fs = require('fs');
-            
-            function parseTestResults(filePath) {
-              const rawData = fs.readFileSync(filePath, 'utf8');
-              const resultData = JSON.parse(rawData);
-              let resultString = '';
-            
-              resultData.testResults.forEach(testFile => {
-                resultString += `\n### ${testFile.name}\n`;
-                testFile.assertionResults.forEach(test => {
-                  const status = test.status === 'passed' ? '✅' : (test.status === 'failed' ? '❌' : '⚠️');
-                  resultString += `${status} ${test.title}\n`;
-                });
-              });
-            
-              return resultString;
-            }
-            
-            let commentBody = '## 테스트 결과\n';
-            
-            try {
-              commentBody += '\n### Unit Tests\n';
-              commentBody += parseTestResults('test-results.json');
-            } catch (error) {
-              commentBody += '\nUnit test results parsing failed.\n';
-            }
-            
-            try {
-              commentBody += '\n### E2E Tests\n';
-              commentBody += parseTestResults('e2e-test-results.json');
-            } catch (error) {
-              commentBody += '\nE2E test results parsing failed.\n';
-            }
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody
-            });
-    outputs:
-      tests_passed: ${{ steps.check_tests.outputs.tests_passed }}
-
-  build:
-    needs: [check_previous_ci, test]
-    if: needs.test.outputs.tests_passed == 'true' && needs.check_previous_ci.outputs.ci_skipped != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js and pnpm
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.6.11
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -224,18 +72,104 @@ jobs:
       - name: Generate Prisma client
         run: pnpm prisma generate
 
-      - name: Build
+      - name: Run Prisma migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Run linter
+        run: pnpm lint
+
+      - name: Run unit tests
+        run: pnpm test -- --json --outputFile=test-results.json
+
+      - name: Run e2e tests
+        run: pnpm exec jest --config ./test/jest-e2e.json --json --outputFile=e2e-test-results.json
+
+      - name: Check test results
+        id: check_tests
+        run: |
+          function checkTestOutcome {
+            local file=$1
+            local failed=$(jq '.numFailedTests' $file)
+            local total=$(jq '.numTotalTests' $file)
+            local skipped=$(jq '.numPendingTests' $file)
+            local passed=$((total - failed - skipped))
+          
+            echo "Total: $total, Passed: $passed, Failed: $failed, Skipped: $skipped"
+          
+            if [ $failed -eq 0 ]; then
+              return 0
+            else
+              return 1
+            fi
+          }
+          
+          echo "Unit Test Results:"
+          checkTestOutcome test-results.json
+          unit_result=$?
+          
+          echo "E2E Test Results:"
+          checkTestOutcome e2e-test-results.json
+          e2e_result=$?
+          
+          if [ $unit_result -eq 0 ] && [ $e2e_result -eq 0 ]; then
+            echo "tests_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "tests_passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build project
+        if: steps.check_tests.outputs.tests_passed == 'true'
         run: pnpm build
 
-      - name: Post build success
+      - name: Post test and build results
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
+            const fs = require('fs');
+            
+            function parseTestResults(filePath) {
+              const resultData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+              return resultData.testResults.flatMap(file => 
+                file.assertionResults.map(test => ({
+                  name: `${file.name}: ${test.title}`,
+                  status: test.status
+                }))
+              );
+            }
+            
+            function formatResults(tests) {
+              return tests.map(t => {
+                let icon;
+                switch(t.status) {
+                  case 'passed': icon = '✅'; break;
+                  case 'failed': icon = '❌'; break;
+                  case 'skipped': icon = '⏭️'; break;
+                  default: icon = '❓';
+                }
+                return `${icon} ${t.name}`;
+              }).join('\n');
+            }
+            
+            const unitTests = parseTestResults('test-results.json');
+            const e2eTests = parseTestResults('e2e-test-results.json');
+            
+            const testsPassed = '${{ steps.check_tests.outputs.tests_passed }}' === 'true';
+            
+            const body = `## 테스트 및 빌드 결과
+            
+            ### Unit Tests
+            ${formatResults(unitTests)}
+            
+            ### E2E Tests
+            ${formatResults(e2eTests)}
+            
+            ${testsPassed ? '## 빌드 성공 ✅\n프로젝트 빌드가 성공적으로 완료되었습니다.' : '## 빌드 실패 ❌\n테스트 실패로 인해 빌드가 진행되지 않았습니다.'}`;
+            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '## 빌드 성공 ✅\n프로젝트 빌드가 성공적으로 완료되었습니다.'
+              body: body
             });
