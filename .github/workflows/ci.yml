@@ -102,7 +102,30 @@ jobs:
         id: check_tests
         if: always()
         run: |
-          if [ "${{ steps.run_tests.outcome }}" != "success" ] || [ "${{ steps.run_e2e_tests.outcome }}" != "success" ]; then
+          function checkTestOutcome {
+            local testFile=$1
+            local outcome="success"
+            local results=$(cat $testFile)
+          
+            for test in $(echo "$results" | jq -r '.testResults[] | .assertionResults[] | @base64'); do
+              _jq() {
+                echo ${test} | base64 --decode | jq -r ${1}
+              }
+
+              status=$(_jq '.status')
+              if [[ "$status" == "failed" ]]; then
+                outcome="failed"
+                break
+              fi
+            done
+          
+            echo $outcome
+          }
+
+          testOutcome=$(checkTestOutcome 'test-results.json')
+          e2eTestOutcome=$(checkTestOutcome 'e2e-test-results.json')
+
+          if [ "$testOutcome" != "success" ] || [ "$e2eTestOutcome" != "success" ]; then
             echo "tests_passed=false" >> $GITHUB_OUTPUT
             exit 1
           else
@@ -125,7 +148,7 @@ jobs:
               resultData.testResults.forEach(testFile => {
                 resultString += `\n### ${testFile.name}\n`;
                 testFile.assertionResults.forEach(test => {
-                  const status = test.status === 'passed' ? '✅' : '❌';
+                  const status = test.status === 'passed' ? '✅' : (test.status === 'failed' ? '❌' : '⚠️');
                   resultString += `${status} ${test.title}\n`;
                 });
               });
