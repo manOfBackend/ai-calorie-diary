@@ -37,7 +37,7 @@ describe('ClaudeController', () => {
   describe('getStreamingResponse', () => {
     it('should stream responses', async () => {
       const mockStream = (async function* () {
-        yield { content: 'test' };
+        yield { content: 'test response' };
       })();
       mockClaudeService.getStreamingResponse.mockResolvedValue(mockStream);
 
@@ -57,7 +57,7 @@ describe('ClaudeController', () => {
       );
       expect(mockResponse.setHeader).toHaveBeenCalledTimes(3);
       expect(mockResponse.write).toHaveBeenCalledWith(
-        'data: {"content":"test"}\n\n',
+        'data: {"content":"test response"}\n\n',
       );
       expect(mockResponse.end).toHaveBeenCalled();
     });
@@ -75,7 +75,7 @@ describe('ClaudeController', () => {
       expect(mockClaudeService.getSingleResponse).toHaveBeenCalledWith(
         'test prompt',
       );
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({ content: 'test response' });
     });
   });
 });

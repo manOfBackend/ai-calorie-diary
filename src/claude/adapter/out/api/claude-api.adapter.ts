@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { ClaudeApiPort } from '../../../application/port/out/claude-api.port';
 import { ClaudeResponse } from '../../../domain/claude-response';
 
@@ -13,30 +13,32 @@ export class ClaudeApiAdapter implements ClaudeApiPort {
     this.API_KEY = this.configService.get<string>('CLAUDE_API_KEY');
   }
 
-  private createAxiosConfig(
-    prompt: string,
-    stream: boolean,
-  ): AxiosRequestConfig {
-    return {
-      method: 'post',
-      url: this.API_URL,
+  private createAxiosInstance(): AxiosInstance {
+    return axios.create({
+      baseURL: this.API_URL,
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': this.API_KEY,
+        'x-api-key': this.API_KEY,
+        'anthropic-version': '2023-06-01',
       },
-      data: {
-        prompt,
-        model: 'claude-3-sonnet-20240229',
-        max_tokens_to_sample: 300,
-        stream,
-      },
-      responseType: stream ? 'stream' : 'json',
-    } as AxiosRequestConfig;
+    });
+  }
+
+  private createRequestBody(prompt: string, stream: boolean) {
+    return {
+      model: 'claude-3-sonnet-20240229',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+      stream,
+    };
   }
 
   async streamResponse(prompt: string): Promise<AsyncIterable<ClaudeResponse>> {
-    const config = this.createAxiosConfig(prompt, true);
-    const response = await axios(config);
+    const body = this.createRequestBody(prompt, true);
+    const axiosInstance = this.createAxiosInstance();
+    const response = await axiosInstance.post('', body, {
+      responseType: 'stream',
+    });
 
     return (async function* () {
       for await (const chunk of response.data) {
@@ -44,8 +46,8 @@ export class ClaudeApiAdapter implements ClaudeApiPort {
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = JSON.parse(line.slice(6));
-            if (data.completion) {
-              yield { content: data.completion };
+            if (data.type === 'content_block_delta' && data.delta?.text) {
+              yield { content: data.delta.text };
             }
           }
         }
@@ -54,8 +56,10 @@ export class ClaudeApiAdapter implements ClaudeApiPort {
   }
 
   async singleResponse(prompt: string): Promise<ClaudeResponse> {
-    const config = this.createAxiosConfig(prompt, false);
-    const response = await axios(config);
-    return { content: response.data.completion };
+    const body = this.createRequestBody(prompt, false);
+    const axiosInstance = this.createAxiosInstance();
+    const response = await axiosInstance.post('', body);
+    const content = response.data.content[0].text;
+    return { content };
   }
 }

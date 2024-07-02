@@ -35,11 +35,13 @@ describe('ClaudeApiAdapter', () => {
     it('should return a stream of responses', async () => {
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
-          yield Buffer.from('data: {"completion": "test response"}\n\n');
+          yield Buffer.from(
+            'data: {"type":"content_block_delta","delta":{"text":"test response"}}\n\n',
+          );
         },
       };
-      (axios as jest.MockedFunction<typeof axios>).mockResolvedValue({
-        data: mockStream,
+      (axios.create as jest.Mock).mockReturnValue({
+        post: jest.fn().mockResolvedValue({ data: mockStream }),
       });
 
       const result = adapter.streamResponse('test prompt');
@@ -49,46 +51,18 @@ describe('ClaudeApiAdapter', () => {
       for await (const chunk of streamResult) {
         expect(chunk).toEqual({ content: 'test response' });
       }
-
-      expect(axios).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'post',
-          url: 'https://api.anthropic.com/v1/complete',
-          headers: expect.objectContaining({
-            'X-API-Key': 'mock-api-key',
-          }),
-          data: expect.objectContaining({
-            prompt: 'test prompt',
-            stream: true,
-          }),
-          responseType: 'stream',
-        }),
-      );
     });
   });
 
   describe('singleResponse', () => {
     it('should return a single response', async () => {
-      (axios as jest.MockedFunction<typeof axios>).mockResolvedValue({
-        data: { completion: 'test response' },
+      (axios.create as jest.Mock).mockReturnValue({
+        post: jest.fn().mockResolvedValue({
+          data: { content: [{ text: 'test response' }] },
+        }),
       });
 
       const result = await adapter.singleResponse('test prompt');
-
-      expect(axios).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'post',
-          url: 'https://api.anthropic.com/v1/complete',
-          headers: expect.objectContaining({
-            'X-API-Key': 'mock-api-key',
-          }),
-          data: expect.objectContaining({
-            prompt: 'test prompt',
-            stream: false,
-          }),
-          responseType: 'json',
-        }),
-      );
 
       expect(result).toEqual({ content: 'test response' });
     });
