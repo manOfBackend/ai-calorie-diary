@@ -11,13 +11,19 @@ import {
 import { Response } from 'express';
 import { ClaudeService } from '../../../application/service/claude.service';
 import { PromptDto } from './dto/prompt.dto';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ClaudeResponseDto } from './dto/claude-response.dto';
 
+@ApiTags('claude')
 @Controller('claude')
 export class ClaudeController {
   constructor(private readonly claudeService: ClaudeService) {}
 
   @Post('stream')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Get streaming response from Claude' })
+  @ApiBody({ type: PromptDto })
+  @ApiResponse({ status: 200, description: 'Streaming response from Claude' })
   async getStreamingResponse(
     @Body(new ValidationPipe()) promptDto: PromptDto,
     @Res() res: Response,
@@ -47,9 +53,16 @@ export class ClaudeController {
 
   @Post()
   @HttpCode(200)
+  @ApiOperation({ summary: 'Get single response from Claude' })
+  @ApiBody({ type: PromptDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Single response from Claude',
+    type: ClaudeResponseDto,
+  })
   async getSingleResponse(
     @Body(new ValidationPipe()) promptDto: PromptDto,
-  ): Promise<{ content: string }> {
+  ): Promise<ClaudeResponseDto> {
     try {
       const response = await this.claudeService.getSingleResponse(
         promptDto.prompt,
