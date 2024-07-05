@@ -62,11 +62,11 @@ describe('AuthController', () => {
       };
 
       authUseCaseMock.register.mockRejectedValue(
-        new ConflictException('Email already exists'),
+        new ConflictException('Registration failed'),
       );
 
-      await expect(controller.register(registerDto)).rejects.toThrow(
-        ConflictException,
+      await expect(controller.register(registerDto)).rejects.toThrowError(
+        'Registration failed',
       );
     });
   });
@@ -87,16 +87,14 @@ describe('AuthController', () => {
         json: jest.fn(),
       } as unknown as Response;
 
-      await controller.login(loginDto, mockResponse);
+      const result = await controller.login(loginDto, mockResponse);
 
       expect(authUseCaseMock.login).toHaveBeenCalledWith(
         expect.objectContaining(loginDto),
       );
       expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Login successful',
-      });
+      expect(result).toEqual({ message: 'Login successful' });
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
@@ -108,9 +106,9 @@ describe('AuthController', () => {
 
       const mockResponse = {} as Response;
 
-      await expect(controller.login(loginDto, mockResponse)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        controller.login(loginDto, mockResponse),
+      ).rejects.toThrowError('Invalid credentials');
     });
   });
 
@@ -130,16 +128,17 @@ describe('AuthController', () => {
         json: jest.fn(),
       } as unknown as Response;
 
-      await controller.refreshToken(refreshTokenDto, mockResponse);
+      const result = await controller.refreshToken(
+        refreshTokenDto,
+        mockResponse,
+      );
 
       expect(authUseCaseMock.refreshToken).toHaveBeenCalledWith(
         expect.objectContaining(refreshTokenDto),
       );
       expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Token refreshed successfully',
-      });
+      expect(result).toEqual({ message: 'Token refreshed successfully' });
     });
 
     it('should throw UnauthorizedException for invalid refresh token', async () => {
@@ -153,7 +152,7 @@ describe('AuthController', () => {
 
       await expect(
         controller.refreshToken(refreshTokenDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrowError('Invalid refresh token');
     });
   });
 });

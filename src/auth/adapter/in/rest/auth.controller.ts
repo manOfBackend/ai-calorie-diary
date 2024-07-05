@@ -9,6 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Effect, pipe } from 'effect';
 import { AuthUseCase } from '../../../application/port/in/auth.use-case';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -34,30 +35,31 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    try {
-      const command = new LoginCommand(loginDto.email, loginDto.password);
-      const { accessToken, refreshToken } = await this.authUseCase.login(
-        command,
-      );
+    const loginEffect = pipe(
+      Effect.tryPromise(() => {
+        const command = new LoginCommand(loginDto.email, loginDto.password);
+        return this.authUseCase.login(command);
+      }),
+      Effect.map(({ accessToken, refreshToken }) => {
+        response.cookie('accessToken', accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+        });
+        response.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          path: '/auth/refresh',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        response.status(HttpStatus.OK);
+        return { message: 'Login successful' };
+      }),
+      Effect.catchAll(() =>
+        Effect.fail(new UnauthorizedException('Invalid credentials')),
+      ),
+    );
 
-      // Set cookies
-      response.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      });
-      response.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/auth/refresh', // Only send the refresh token for refresh requests
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
-      return response
-        .status(HttpStatus.OK)
-        .json({ message: 'Login successful' });
-    } catch (error) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    return Effect.runPromise(loginEffect);
   }
 
   @ApiOperation({ summary: '토큰 갱신' })
@@ -68,30 +70,31 @@ export class AuthController {
     @Body() refreshTokenDto: RefreshTokenDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    try {
-      const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
-      const { accessToken, refreshToken } = await this.authUseCase.refreshToken(
-        command,
-      );
+    const refreshEffect = pipe(
+      Effect.tryPromise(() => {
+        const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
+        return this.authUseCase.refreshToken(command);
+      }),
+      Effect.map(({ accessToken, refreshToken }) => {
+        response.cookie('accessToken', accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+        });
+        response.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          path: '/auth/refresh',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        response.status(HttpStatus.OK);
+        return { message: 'Token refreshed successfully' };
+      }),
+      Effect.catchAll(() =>
+        Effect.fail(new UnauthorizedException('Invalid refresh token')),
+      ),
+    );
 
-      // Set new cookies
-      response.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      });
-      response.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/auth/refresh',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
-      return response
-        .status(HttpStatus.OK)
-        .json({ message: 'Token refreshed successfully' });
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+    return Effect.runPromise(refreshEffect);
   }
 
   @ApiOperation({ summary: '사용자 등록' })
@@ -99,18 +102,22 @@ export class AuthController {
   @ApiResponse({ status: 401, description: '등록 실패' })
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    try {
-      const command = new RegisterCommand(
-        registerDto.email,
-        registerDto.password,
-      );
-      const user = await this.authUseCase.register(command);
-      return { id: user.id, email: user.email };
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-      throw new UnauthorizedException('Registration failed');
-    }
+    const registerEffect = pipe(
+      Effect.tryPromise(() => {
+        const command = new RegisterCommand(
+          registerDto.email,
+          registerDto.password,
+        );
+        return this.authUseCase.register(command);
+      }),
+      Effect.map((user) => ({ id: user.id, email: user.email })),
+      Effect.catchAll((error) =>
+        error instanceof ConflictException
+          ? Effect.fail(error)
+          : Effect.fail(new UnauthorizedException('Registration failed')),
+      ),
+    );
+
+    return Effect.runPromise(registerEffect);
   }
 }
