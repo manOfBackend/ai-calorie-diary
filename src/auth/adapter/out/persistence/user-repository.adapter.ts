@@ -38,7 +38,7 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
   }
 
   async saveRefreshToken(
-    userId: number,
+    userId: string,
     token: string,
     expiresAt: Date,
   ): Promise<RefreshToken> {
@@ -56,7 +56,7 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
     );
   }
 
-  async findRefreshToken(userId: number): Promise<RefreshToken | null> {
+  async findRefreshToken(userId: string): Promise<RefreshToken | null> {
     const refreshToken = await this.prisma.refreshToken.findUnique({
       where: { userId },
     });
@@ -71,7 +71,7 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
       : null;
   }
 
-  async deleteRefreshToken(userId: number): Promise<void> {
+  async deleteRefreshToken(userId: string): Promise<void> {
     await this.prisma.refreshToken.delete({ where: { userId } });
   }
 }
