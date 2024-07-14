@@ -8,18 +8,29 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
+  id           String        @id @default(uuid())
   email        String        @unique
   password     String
   refreshToken RefreshToken?
+  diaries      Diary[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
 
+model Diary {
+  id        String   @id @default(uuid())
+  content   String
+  imageUrl  String?
+  userId    String // 변경: Int에서 String으로
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model RefreshToken {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid()) // 변경: Int에서 String으로, autoincrement() 제거
   token     String   @unique
-  userId    Int      @unique
+  userId    String   @unique // 변경: Int에서 String으로
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())

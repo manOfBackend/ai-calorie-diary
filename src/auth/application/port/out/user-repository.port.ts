@@ -5,10 +5,10 @@ export interface UserRepositoryPort {
   findByEmail(email: string): Promise<User | null>;
   save(user: User): Promise<User>;
   saveRefreshToken(
-    userId: number,
+    userId: string,
     token: string,
     expiresAt: Date,
   ): Promise<RefreshToken>;
-  findRefreshToken(userId: number): Promise<RefreshToken | null>;
-  deleteRefreshToken(userId: number): Promise<void>;
+  findRefreshToken(userId: string): Promise<RefreshToken | null>;
+  deleteRefreshToken(userId: string): Promise<void>;
 }
