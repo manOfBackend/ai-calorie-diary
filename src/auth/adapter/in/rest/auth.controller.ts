@@ -30,31 +30,16 @@ export class AuthController {
   @ApiResponse({ status: 200, description: '로그인 성공' })
   @ApiResponse({ status: 401, description: '인증 실패' })
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  async login(@Body() loginDto: LoginDto, @Res() response: Response) {
     try {
       const command = new LoginCommand(loginDto.email, loginDto.password);
       const { accessToken, refreshToken } = await this.authUseCase.login(
         command,
       );
 
-      // Set cookies
-      response.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      });
-      response.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/auth/refresh', // Only send the refresh token for refresh requests
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
-      return response
-        .status(HttpStatus.OK)
-        .json({ message: 'Login successful' });
+      this.setTokenCookies(response, accessToken, refreshToken);
+      response.status(HttpStatus.OK);
+      response.json({ message: 'Login successful' });
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -66,7 +51,7 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
-    @Res({ passthrough: true }) response: Response,
+    @Res() response: Response,
   ) {
     try {
       const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
@@ -74,21 +59,10 @@ export class AuthController {
         command,
       );
 
-      // Set new cookies
-      response.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      });
-      response.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/auth/refresh',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+      this.setTokenCookies(response, accessToken, refreshToken);
 
-      return response
-        .status(HttpStatus.OK)
-        .json({ message: 'Token refreshed successfully' });
+      response.status(HttpStatus.OK);
+      response.json({ message: 'Token refreshed successfully' });
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -112,5 +86,30 @@ export class AuthController {
       }
       throw new UnauthorizedException('Registration failed');
     }
+  }
+
+  private setTokenCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  }
+
+  private clearTokenCookies(res: Response) {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken', { path: '/auth/refresh' });
   }
 }

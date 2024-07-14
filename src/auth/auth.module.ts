@@ -6,6 +6,7 @@ import { AuthController } from './adapter/in/rest/auth.controller';
 import { AuthService } from './application/service/auth.service';
 import { UserRepositoryAdapter } from './adapter/out/persistence/user-repository.adapter';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { JwtStrategy } from '../common/strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
       provide: 'AuthUseCase',
       useClass: AuthService,
     },
+    JwtStrategy,
   ],
   exports: ['AuthUseCase'],
 })

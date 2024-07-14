@@ -44,17 +44,18 @@ describe('AuthController (e2e)', () => {
   it('/auth/login (POST) - successful login', async () => {
     // 먼저 사용자를 등록합니다
     const password = 'password123';
+    const email = 'test_login@example.com';
     const hashedPassword = await bcrypt.hash(password, 10);
     await prismaService.user.create({
       data: {
-        email: 'test@example.com',
+        email,
         password: hashedPassword,
       },
     });
 
     const response = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'test@example.com', password: 'password123' })
+      .send({ email, password })
       .expect(200);
 
     expect(response.body).toEqual({ message: 'Login successful' });
