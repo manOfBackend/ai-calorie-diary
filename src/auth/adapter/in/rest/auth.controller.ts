@@ -5,10 +5,14 @@ import {
   UnauthorizedException,
   Inject,
   ConflictException,
-  Res,
   HttpStatus,
+  Get,
+  UseGuards,
+  Req,
+  BadRequestException,
+  HttpCode,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request } from 'express';
 import { AuthUseCase } from '../../../application/port/in/auth.use-case';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -16,7 +20,14 @@ import { LoginCommand } from '../../../application/port/in/dto/login.command';
 import { RefreshTokenCommand } from '../../../application/port/in/dto/refresh-token.command';
 import { RegisterCommand } from '../../../application/port/in/dto/register.command';
 import { RegisterDto } from './dto/register.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+  ApiBody,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -27,50 +38,86 @@ export class AuthController {
   ) {}
 
   @ApiOperation({ summary: '사용자 로그인' })
-  @ApiResponse({ status: 200, description: '로그인 성공' })
+  @ApiResponse({
+    status: 200,
+    description: '로그인 성공',
+    schema: {
+      properties: {
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiBody({ type: LoginDto })
   @Post('login')
-  async login(@Body() loginDto: LoginDto, @Res() response: Response) {
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() loginDto: LoginDto) {
     try {
       const command = new LoginCommand(loginDto.email, loginDto.password);
-      const { accessToken, refreshToken } = await this.authUseCase.login(
+      const { accessToken, refreshToken, user } = await this.authUseCase.login(
         command,
       );
-
-      this.setTokenCookies(response, accessToken, refreshToken);
-      response.status(HttpStatus.OK);
-      response.json({ message: 'Login successful' });
+      return {
+        accessToken,
+        refreshToken,
+        user: { id: user.id, email: user.email },
+      };
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
     }
   }
 
   @ApiOperation({ summary: '토큰 갱신' })
-  @ApiResponse({ status: 200, description: '토큰 갱신 성공' })
+  @ApiResponse({
+    status: 200,
+    description: '토큰 갱신 성공',
+    schema: {
+      properties: {
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+      },
+    },
+  })
   @ApiResponse({ status: 401, description: '토큰 갱신 실패' })
+  @ApiBody({ type: RefreshTokenDto })
   @Post('refresh')
-  async refreshToken(
-    @Body() refreshTokenDto: RefreshTokenDto,
-    @Res() response: Response,
-  ) {
+  @HttpCode(HttpStatus.OK)
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     try {
       const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
       const { accessToken, refreshToken } = await this.authUseCase.refreshToken(
         command,
       );
-
-      this.setTokenCookies(response, accessToken, refreshToken);
-
-      response.status(HttpStatus.OK);
-      response.json({ message: 'Token refreshed successfully' });
+      return { accessToken, refreshToken };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
   @ApiOperation({ summary: '사용자 등록' })
-  @ApiResponse({ status: 200, description: '등록 성공' })
-  @ApiResponse({ status: 401, description: '등록 실패' })
+  @ApiResponse({
+    status: 201,
+    description: '등록 성공',
+    schema: {
+      properties: {
+        id: { type: 'string' },
+        email: { type: 'string' },
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '잘못된 요청' })
+  @ApiResponse({ status: 409, description: '이미 존재하는 이메일' })
+  @ApiBody({ type: RegisterDto })
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     try {
@@ -78,38 +125,52 @@ export class AuthController {
         registerDto.email,
         registerDto.password,
       );
-      const user = await this.authUseCase.register(command);
-      return { id: user.id, email: user.email };
+      const { user, accessToken, refreshToken } =
+        await this.authUseCase.register(command);
+      return {
+        id: user.id,
+        email: user.email,
+        accessToken,
+        refreshToken,
+      };
     } catch (error) {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new UnauthorizedException('Registration failed');
+      throw new BadRequestException('Registration failed');
     }
   }
 
-  private setTokenCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken: string,
-  ) {
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/auth/refresh',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+  @ApiOperation({ summary: '로그아웃' })
+  @ApiResponse({ status: 200, description: '로그아웃 성공' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: Request) {
+    const userId = req.user['id'];
+    await this.authUseCase.logout(userId);
+    return { message: 'Logout successful' };
   }
 
-  private clearTokenCookies(res: Response) {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken', { path: '/auth/refresh' });
+  @ApiOperation({ summary: '현재 사용자 정보 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '사용자 정보 조회 성공',
+    schema: {
+      properties: {
+        id: { type: 'string' },
+        email: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getCurrentUser(@Req() req: Request) {
+    const userId = req.user['id'];
+    const user = await this.authUseCase.getUserById(userId);
+    return { id: user.id, email: user.email };
   }
 }
