@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -23,25 +24,15 @@ export class AuthService implements AuthUseCase {
 
   async login(
     command: LoginCommand,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string; refreshToken: string; user: User }> {
     const user = await this.userRepository.findByEmail(command.email);
     if (!user || !(await bcrypt.compare(command.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email };
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '9d' });
+    const { accessToken, refreshToken } = await this.generateTokens(user);
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 9);
-    await this.userRepository.saveRefreshToken(
-      user.id,
-      refreshToken,
-      expiresAt,
-    );
-
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, user };
   }
 
   async refreshToken(
@@ -63,27 +54,20 @@ export class AuthService implements AuthUseCase {
 
       await this.userRepository.deleteRefreshToken(payload.sub);
 
-      const newPayload = { sub: payload.sub, email: payload.email };
-      const accessToken = this.jwtService.sign(newPayload);
-      const refreshToken = this.jwtService.sign(newPayload, {
-        expiresIn: '7d',
-      });
+      const user = await this.userRepository.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
 
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      await this.userRepository.saveRefreshToken(
-        payload.sub,
-        refreshToken,
-        expiresAt,
-      );
-
-      return { accessToken, refreshToken };
+      return await this.generateTokens(user);
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async register(command: RegisterCommand): Promise<User> {
+  async register(
+    command: RegisterCommand,
+  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
     const existingUser = await this.userRepository.findByEmail(command.email);
     if (existingUser) {
       throw new ConflictException('Email already exists');
@@ -98,6 +82,39 @@ export class AuthService implements AuthUseCase {
       new Date(),
     );
 
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+    const { accessToken, refreshToken } = await this.generateTokens(savedUser);
+
+    return { user: savedUser, accessToken, refreshToken };
+  }
+
+  async logout(userId: string): Promise<void> {
+    await this.userRepository.deleteRefreshToken(userId);
+  }
+
+  async getUserById(userId: string): Promise<User> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
+  private async generateTokens(
+    user: User,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    await this.userRepository.saveRefreshToken(
+      user.id,
+      refreshToken,
+      expiresAt,
+    );
+
+    return { accessToken, refreshToken };
   }
 }

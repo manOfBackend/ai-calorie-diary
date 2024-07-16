@@ -21,6 +21,19 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
       : null;
   }
 
+  async findById(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    return user
+      ? new User(
+          user.id,
+          user.email,
+          user.password,
+          user.createdAt,
+          user.updatedAt,
+        )
+      : null;
+  }
+
   async save(user: User): Promise<User> {
     const savedUser = await this.prisma.user.create({
       data: {

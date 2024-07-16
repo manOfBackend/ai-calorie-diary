@@ -1,9 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthUseCase } from '../../../application/port/in/auth.use-case';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '../../../domain/user';
-import { Response } from 'express';
+import { Request } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -14,6 +18,8 @@ describe('AuthController', () => {
       login: jest.fn(),
       refreshToken: jest.fn(),
       register: jest.fn(),
+      logout: jest.fn(),
+      getUserById: jest.fn(),
     }));
 
     const module: TestingModule = await Test.createTestingModule({
@@ -32,35 +38,39 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('should register a new user', async () => {
-      const registerDto = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
+    const registerDto = {
+      email: 'test@example.com',
+      password: 'password123',
+    };
+
+    it('should register a new user and return tokens', async () => {
       const user = new User(
-        1,
+        '1',
         registerDto.email,
         'hashedPassword',
         new Date(),
         new Date(),
       );
-
-      authUseCaseMock.register.mockResolvedValue(user);
+      const tokens = {
+        accessToken: 'accessToken',
+        refreshToken: 'refreshToken',
+      };
+      authUseCaseMock.register.mockResolvedValue({ user, ...tokens });
 
       const result = await controller.register(registerDto);
 
-      expect(result).toEqual({ id: user.id, email: user.email });
       expect(authUseCaseMock.register).toHaveBeenCalledWith(
         expect.objectContaining(registerDto),
       );
+      expect(result).toEqual({
+        id: user.id,
+        email: user.email,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
     });
 
     it('should throw ConflictException if email already exists', async () => {
-      const registerDto = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
-
       authUseCaseMock.register.mockRejectedValue(
         new ConflictException('Email already exists'),
       );
@@ -72,88 +82,113 @@ describe('AuthController', () => {
   });
 
   describe('login', () => {
-    it('should return tokens for valid credentials', async () => {
-      const loginDto = { email: 'test@example.com', password: 'password123' };
+    const loginDto = { email: 'test@example.com', password: 'password123' };
+
+    it('should return tokens and user info for valid credentials', async () => {
+      const user = new User(
+        '1',
+        loginDto.email,
+        'hashedPassword',
+        new Date(),
+        new Date(),
+      );
       const tokens = {
         accessToken: 'accessToken',
         refreshToken: 'refreshToken',
       };
+      authUseCaseMock.login.mockResolvedValue({ ...tokens, user });
 
-      authUseCaseMock.login.mockResolvedValue(tokens);
-
-      const mockResponse = {
-        cookie: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      } as unknown as Response;
-
-      await controller.login(loginDto, mockResponse);
+      const result = await controller.login(loginDto);
 
       expect(authUseCaseMock.login).toHaveBeenCalledWith(
         expect.objectContaining(loginDto),
       );
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Login successful',
+      expect(result).toEqual({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: { id: user.id, email: user.email },
       });
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
-      const loginDto = { email: 'test@example.com', password: 'wrongpassword' };
-
       authUseCaseMock.login.mockRejectedValue(
         new UnauthorizedException('Invalid credentials'),
       );
 
-      const mockResponse = {} as Response;
-
-      await expect(controller.login(loginDto, mockResponse)).rejects.toThrow(
+      await expect(controller.login(loginDto)).rejects.toThrow(
         UnauthorizedException,
       );
     });
   });
 
   describe('refreshToken', () => {
+    const refreshTokenDto = { refreshToken: 'validRefreshToken' };
+
     it('should refresh tokens successfully', async () => {
-      const refreshTokenDto = { refreshToken: 'validRefreshToken' };
       const newTokens = {
         accessToken: 'newAccessToken',
         refreshToken: 'newRefreshToken',
       };
-
       authUseCaseMock.refreshToken.mockResolvedValue(newTokens);
 
-      const mockResponse = {
-        cookie: jest.fn(),
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      } as unknown as Response;
-
-      await controller.refreshToken(refreshTokenDto, mockResponse);
+      const result = await controller.refreshToken(refreshTokenDto);
 
       expect(authUseCaseMock.refreshToken).toHaveBeenCalledWith(
         expect.objectContaining(refreshTokenDto),
       );
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Token refreshed successfully',
-      });
+      expect(result).toEqual(newTokens);
     });
 
     it('should throw UnauthorizedException for invalid refresh token', async () => {
-      const refreshTokenDto = { refreshToken: 'invalidRefreshToken' };
-
       authUseCaseMock.refreshToken.mockRejectedValue(
         new UnauthorizedException('Invalid refresh token'),
       );
 
-      const mockResponse = {} as Response;
+      await expect(controller.refreshToken(refreshTokenDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
 
-      await expect(
-        controller.refreshToken(refreshTokenDto, mockResponse),
-      ).rejects.toThrow(UnauthorizedException);
+  describe('logout', () => {
+    it('should logout successfully', async () => {
+      const mockRequest = { user: { id: '1' } } as unknown as Request;
+
+      await controller.logout(mockRequest);
+
+      expect(authUseCaseMock.logout).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('getCurrentUser', () => {
+    it('should return current user', async () => {
+      const mockRequest = { user: { id: '1' } } as unknown as Request;
+      const user = new User(
+        '1',
+        'test@example.com',
+        'hashedPassword',
+        new Date(),
+        new Date(),
+      );
+
+      authUseCaseMock.getUserById.mockResolvedValue(user);
+
+      const result = await controller.getCurrentUser(mockRequest);
+
+      expect(authUseCaseMock.getUserById).toHaveBeenCalledWith('1');
+      expect(result).toEqual({ id: user.id, email: user.email });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      const mockRequest = { user: { id: '1' } } as unknown as Request;
+
+      authUseCaseMock.getUserById.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(controller.getCurrentUser(mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
