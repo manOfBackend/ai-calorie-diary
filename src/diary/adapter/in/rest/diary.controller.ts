@@ -62,10 +62,6 @@ export class DiaryController {
     @UploadedFile() image: Express.Multer.File,
     @Request() req,
   ) {
-    console.log('req.user:', req.user);
-    console.log('req.headers:', req.headers);
-    console.log('req.method:', req.method);
-    console.log('req.url:', req.url);
     if (!req.user) {
       throw new UnauthorizedException('User not authenticated');
     }

@@ -13,7 +13,10 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthUseCase } from '../../../application/port/in/auth.use-case';
+import {
+  AUTH_USE_CASE,
+  AuthUseCase,
+} from '../../../application/port/in/auth.use-case';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LoginCommand } from '../../../application/port/in/dto/login.command';
@@ -33,7 +36,7 @@ import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
   constructor(
-    @Inject('AuthUseCase')
+    @Inject(AUTH_USE_CASE)
     private readonly authUseCase: AuthUseCase,
   ) {}
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClaudeService } from './claude.service';
-import { ClaudeApiPort } from '../port/out/claude-api.port';
+import { CLAUDE_API_PORT, ClaudeApiPort } from '../port/out/claude-api.port';
 
 describe('ClaudeService', () => {
   let service: ClaudeService;
@@ -16,7 +16,7 @@ describe('ClaudeService', () => {
       providers: [
         ClaudeService,
         {
-          provide: 'ClaudeApiPort',
+          provide: CLAUDE_API_PORT,
           useValue: mockClaudeApiPort,
         },
       ],

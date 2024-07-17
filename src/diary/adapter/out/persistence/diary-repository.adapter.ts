@@ -8,9 +8,10 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
   constructor(private prisma: PrismaService) {}
 
   async createDiary(diary: Diary): Promise<Diary> {
-    console.log('diary', diary);
     return this.prisma.$transaction(async (prisma) => {
       // 사용자 존재 여부 확인
+      const allUsers = await prisma.user.findMany();
+      console.log(allUsers);
       const user = await prisma.user.findUnique({
         where: { id: diary.userId },
       });
@@ -54,7 +55,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
   }
 
   async findDiariesByUserId(userId: string): Promise<Diary[]> {
-    console.log('findDiariesByUserId', userId);
     const diaries = await this.prisma.diary.findMany();
     return diaries.map(
       (diary) =>

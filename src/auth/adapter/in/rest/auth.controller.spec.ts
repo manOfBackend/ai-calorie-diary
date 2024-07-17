@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { AuthUseCase } from '../../../application/port/in/auth.use-case';
+import {
+  AUTH_USE_CASE,
+  AuthUseCase,
+} from '../../../application/port/in/auth.use-case';
 import {
   ConflictException,
   UnauthorizedException,
@@ -25,12 +28,12 @@ describe('AuthController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
-        { provide: 'AuthUseCase', useFactory: authUseCaseMockFactory },
+        { provide: AUTH_USE_CASE, useFactory: authUseCaseMockFactory },
       ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    authUseCaseMock = module.get('AuthUseCase');
+    authUseCaseMock = module.get(AUTH_USE_CASE);
   });
 
   it('should be defined', () => {

@@ -21,9 +21,9 @@ export class DiaryService implements DiaryUseCase {
     imageFile: Express.Multer.File | undefined,
     userId: string,
   ): Promise<Diary> {
-    const imageUrl: string | null = null;
+    let imageUrl: string | null = null;
     if (imageFile) {
-      // imageUrl = await this.s3Service.uploadFile(imageFile);
+      imageUrl = await this.s3Service.uploadFile(imageFile);
     }
     const diary = new Diary(
       '0',

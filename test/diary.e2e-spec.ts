@@ -8,7 +8,9 @@ import { PrismaService } from '../src/common/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as path from 'node:path';
 
-describe.skip('DiaryController (e2e)', () => {
+jest.setTimeout(300000);
+const id = 0;
+describe('DiaryController (e2e)', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let jwtService: JwtService;
@@ -20,8 +22,6 @@ describe.skip('DiaryController (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    jest.setTimeout(30000); // 30초로 설정
-
     app = moduleFixture.createNestApplication();
     await app.init();
 
@@ -31,25 +31,30 @@ describe.skip('DiaryController (e2e)', () => {
 
   beforeEach(async () => {
     // 데이터베이스 정리
-    await prismaService.diary.deleteMany();
-    await prismaService.user.deleteMany();
+    await prismaService.$transaction(async (prisma) => {
+      await prisma.diary.deleteMany();
+      await prisma.user.deleteMany();
 
-    // 테스트용 사용자 생성
-    const user = await prismaService.user.create({
-      data: {
-        email: 'test_diary@example.com',
-        password: 'hashedpassword',
-      },
+      // 테스트용 사용자 생성
+      const user = await prisma.user.create({
+        data: {
+          email: 'test_diary@example.com',
+          password: 'hashedpassword',
+        },
+      });
+      userId = user.id;
+
+      // JWT 토큰 생성
+      authToken = jwtService.sign({ sub: user.id, email: user.email });
     });
-    userId = user.id;
-
-    // JWT 토큰 생성
-    authToken = jwtService.sign({ sub: user.id, email: user.email });
   });
 
   afterAll(async () => {
-    await prismaService.diary.deleteMany();
-    await prismaService.user.deleteMany();
+    await prismaService.$transaction(async (prisma) => {
+      await prisma.diary.deleteMany();
+      await prisma.user.deleteMany();
+    });
+    await prismaService.$disconnect();
     await app.close();
   });
 
@@ -64,6 +69,7 @@ describe.skip('DiaryController (e2e)', () => {
         })
         .expect(201)
         .expect((res) => {
+          console.log(res.body);
           expect(res.body).toHaveProperty('id');
           expect(res.body.content).toBe('Test diary content');
           expect(res.body.userId).toBe(userId);
@@ -80,6 +86,7 @@ describe.skip('DiaryController (e2e)', () => {
         .field('content', 'Test diary content with image')
         .expect(201)
         .expect((res) => {
+          console.log(res.body);
           expect(res.body).toHaveProperty('imageUrl');
         });
     });

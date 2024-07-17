@@ -6,7 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UserRepositoryPort } from '../port/out/user-repository.port';
+import {
+  USER_REPOSITORY_PORT,
+  UserRepositoryPort,
+} from '../port/out/user-repository.port';
 import { User } from '../../domain/user';
 import { RefreshToken } from '../../domain/refresh-token';
 import * as bcrypt from 'bcrypt';
@@ -39,7 +42,7 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: 'UserRepositoryPort',
+          provide: USER_REPOSITORY_PORT,
           useFactory: userRepositoryMockFactory,
         },
         { provide: JwtService, useFactory: jwtServiceMockFactory },
@@ -47,7 +50,7 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    userRepositoryMock = module.get('UserRepositoryPort');
+    userRepositoryMock = module.get(USER_REPOSITORY_PORT);
     jwtServiceMock = module.get(JwtService);
   });
 

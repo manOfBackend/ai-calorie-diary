@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ClaudeController } from '../src/claude/adapter/in/rest/claude.controller';
 import { ClaudeService } from '../src/claude/application/service/claude.service';
-import { ClaudeApiPort } from '../src/claude/application/port/out/claude-api.port';
+import {
+  CLAUDE_API_PORT,
+  ClaudeApiPort,
+} from '../src/claude/application/port/out/claude-api.port';
 
 class MockClaudeApiAdapter implements ClaudeApiPort {
   async streamResponse(): Promise<AsyncIterable<{ content: string }>> {
@@ -24,7 +27,7 @@ class MockClaudeApiAdapter implements ClaudeApiPort {
   providers: [
     ClaudeService,
     {
-      provide: 'ClaudeApiPort',
+      provide: CLAUDE_API_PORT,
       useClass: MockClaudeApiAdapter,
     },
   ],

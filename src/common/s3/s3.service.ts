@@ -9,7 +9,11 @@ export class S3Service {
 
   constructor(private configService: ConfigService) {
     this.s3Client = new S3Client({
-      region: this.configService.get('AWS_REGION'),
+      region: this.configService.getOrThrow('AWS_REGION'),
+      credentials: {
+        accessKeyId: this.configService.getOrThrow('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.configService.getOrThrow('AWS_SECRET_ACCESS_KEY'),
+      },
     });
   }
 
