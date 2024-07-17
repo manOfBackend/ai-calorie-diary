@@ -5,12 +5,13 @@ import { DiaryRepositoryAdapter } from './adapter/out/persistence/diary-reposito
 import { DIARY_REPOSITORY_PORT } from './application/port/out/diary-repository.port';
 import { S3Service } from '../common/s3/s3.service';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { DIARY_USE_CASE } from './application/port/in/diary.use-case';
 
 @Module({
   controllers: [DiaryController],
   providers: [
     {
-      provide: 'DiaryUseCase',
+      provide: DIARY_USE_CASE,
       useClass: DiaryService,
     },
     {
@@ -20,6 +21,6 @@ import { PrismaService } from '../common/prisma/prisma.service';
     S3Service,
     PrismaService,
   ],
-  exports: ['DiaryUseCase'],
+  exports: [DIARY_USE_CASE],
 })
 export class DiaryModule {}

@@ -3,6 +3,8 @@ import { RefreshTokenCommand } from './dto/refresh-token.command';
 import { RegisterCommand } from './dto/register.command';
 import { User } from '../../../domain/user';
 
+export const AUTH_USE_CASE = 'AUTH_USE_CASE';
+
 export interface AuthUseCase {
   login(
     command: LoginCommand,

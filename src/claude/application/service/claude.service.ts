@@ -1,12 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClaudeUseCase } from '../port/in/claude.use-case';
-import { ClaudeApiPort } from '../port/out/claude-api.port';
+import { CLAUDE_API_PORT, ClaudeApiPort } from '../port/out/claude-api.port';
 import { ClaudeResponse } from '../../domain/claude-response';
 
 @Injectable()
 export class ClaudeService implements ClaudeUseCase {
   constructor(
-    @Inject('ClaudeApiPort')
+    @Inject(CLAUDE_API_PORT)
     private readonly claudeApiPort: ClaudeApiPort,
   ) {}
 

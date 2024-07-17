@@ -13,7 +13,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
-import { DiaryUseCase } from '../../../application/port/in/diary.use-case';
+import {
+  DIARY_USE_CASE,
+  DiaryUseCase,
+} from '../../../application/port/in/diary.use-case';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import {
   ApiTags,
@@ -30,7 +33,7 @@ import {
 @ApiBearerAuth()
 export class DiaryController {
   constructor(
-    @Inject('DiaryUseCase')
+    @Inject(DIARY_USE_CASE)
     private readonly diaryUseCase: DiaryUseCase,
   ) {}
 

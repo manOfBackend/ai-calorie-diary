@@ -1,6 +1,7 @@
 import { User } from '../../../domain/user';
 import { RefreshToken } from '../../../domain/refresh-token';
 
+export const USER_REPOSITORY_PORT = 'USER_REPOSITORY_PORT';
 export interface UserRepositoryPort {
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
