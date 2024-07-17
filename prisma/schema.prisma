@@ -21,16 +21,16 @@ model Diary {
   id        String   @id @default(uuid())
   content   String
   imageUrl  String?
-  userId    String // 변경: Int에서 String으로
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid()) // 변경: Int에서 String으로, autoincrement() 제거
+  id        String   @id @default(uuid())
   token     String   @unique
-  userId    String   @unique // 변경: Int에서 String으로
+  userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
