@@ -22,7 +22,6 @@ import { CreateDiaryDto } from './dto/create-diary.dto';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,

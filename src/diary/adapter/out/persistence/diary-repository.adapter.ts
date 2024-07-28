@@ -9,7 +9,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
 
   async createDiary(diary: Diary): Promise<Diary> {
     return this.prisma.$transaction(async (prisma) => {
-      // 사용자 존재 여부 확인
       const user = await prisma.user.findUnique({
         where: { id: diary.userId },
       });
@@ -18,7 +17,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
         throw new NotFoundException(`User with id ${diary.userId} not found`);
       }
 
-      // 일기 생성
       const createdDiary = await prisma.diary.create({
         data: {
           content: diary.content,
@@ -27,43 +25,31 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
         },
       });
 
-      return new Diary(
-        createdDiary.id,
-        createdDiary.content,
-        createdDiary.imageUrl,
-        createdDiary.userId,
-        createdDiary.createdAt,
-        createdDiary.updatedAt,
-      );
+      return this.mapToDomain(createdDiary);
     });
   }
 
   async findDiaryById(id: string): Promise<Diary | null> {
     const diary = await this.prisma.diary.findUnique({ where: { id } });
-    return diary
-      ? new Diary(
-          diary.id,
-          diary.content,
-          diary.imageUrl,
-          diary.userId,
-          diary.createdAt,
-          diary.updatedAt,
-        )
-      : null;
+    return diary ? this.mapToDomain(diary) : null;
   }
 
   async findDiariesByUserId(userId: string): Promise<Diary[]> {
-    const diaries = await this.prisma.diary.findMany();
-    return diaries.map(
-      (diary) =>
-        new Diary(
-          diary.id,
-          diary.content,
-          diary.imageUrl,
-          diary.userId,
-          diary.createdAt,
-          diary.updatedAt,
-        ),
+    const diaries = await this.prisma.diary.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return diaries.map(this.mapToDomain);
+  }
+
+  private mapToDomain(diary: any): Diary {
+    return new Diary(
+      diary.id,
+      diary.content,
+      diary.imageUrl,
+      diary.userId,
+      diary.createdAt,
+      diary.updatedAt,
     );
   }
 }
