@@ -31,6 +31,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { ErrorResponseDto } from '../../../../common/dto/error-response.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -58,7 +59,11 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+    type: ErrorResponseDto,
+  })
   @ApiBody({ type: LoginDto })
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -108,7 +113,7 @@ export class AuthController {
   @ApiOperation({ summary: '사용자 등록' })
   @ApiResponse({
     status: 201,
-    description: '등록 성공',
+    description: '사용자 등록 성공',
     schema: {
       properties: {
         id: { type: 'string' },
@@ -118,10 +123,19 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: '잘못된 요청' })
-  @ApiResponse({ status: 409, description: '이미 존재하는 이메일' })
+  @ApiResponse({
+    status: 400,
+    description: '잘못된 요청',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: '이미 존재하는 이메일',
+    type: ErrorResponseDto,
+  })
   @ApiBody({ type: RegisterDto })
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto) {
     try {
       const command = new RegisterCommand(
