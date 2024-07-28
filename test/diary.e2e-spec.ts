@@ -7,6 +7,7 @@ import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 jest.setTimeout(300000);
 describe('DiaryController (e2e)', () => {
@@ -78,10 +79,12 @@ describe('DiaryController (e2e)', () => {
     // 파일 업로드 테스트를 별도로 진행
     it('should handle file upload', () => {
       const filePath = path.join(__dirname, 'assets', 'icon.png');
+      const fileBuffer = fs.readFileSync(filePath);
+
       return request(app.getHttpServer())
         .post('/diary')
         .set('Authorization', `Bearer ${authToken}`)
-        .attach('image', filePath)
+        .field('image', fileBuffer)
         .field('content', 'Test diary content with image')
         .expect(201)
         .expect((res) => {

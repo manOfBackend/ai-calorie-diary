@@ -39,7 +39,8 @@ import {
 @ApiBearerAuth()
 @ApiHeader({
   name: 'Authorization',
-  description: 'JWT 토큰. 예: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  description:
+    'JWT 토큰sss. 예: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
 })
 export class DiaryController {
   constructor(
