@@ -30,12 +30,17 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiHeader,
 } from '@nestjs/swagger';
 
 @ApiTags('diary')
 @Controller('diary')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@ApiHeader({
+  name: 'Authorization',
+  description: 'JWT 토큰. 예: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+})
 export class DiaryController {
   constructor(
     @Inject(DIARY_USE_CASE)
@@ -53,6 +58,16 @@ export class DiaryController {
   @ApiBody({
     type: CreateDiaryDto,
     description: '일기 작성에 필요한 데이터',
+    examples: {
+      diary: {
+        summary: '일기 예시',
+        value: {
+          content:
+            '오늘은 정말 좋은 날이었습니다. 공원에서 산책을 하며 많은 생각을 했어요.',
+          image: '(binary)',
+        },
+      },
+    },
   })
   @ApiCreatedResponse({
     description: '일기가 성공적으로 작성되었습니다.',
@@ -97,6 +112,7 @@ export class DiaryController {
     required: true,
     description: '조회할 일기의 ID',
     schema: { type: 'string' },
+    example: '1234567890',
   })
   @ApiOkResponse({
     description: '일기를 성공적으로 조회했습니다.',
