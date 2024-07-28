@@ -3,13 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
-  GetObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class S3Service {
   private s3Client: S3Client;
+  private bucketName: string;
 
   constructor(private configService: ConfigService) {
     this.s3Client = new S3Client({
@@ -19,14 +19,14 @@ export class S3Service {
         secretAccessKey: this.configService.getOrThrow('AWS_SECRET_ACCESS_KEY'),
       },
     });
+    this.bucketName = this.configService.getOrThrow('AWS_S3_BUCKET_NAME');
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
-    const bucketName = this.configService.get('AWS_S3_BUCKET_NAME');
     const key = `${Date.now()}-${file.originalname}`;
 
     const command = new PutObjectCommand({
-      Bucket: bucketName,
+      Bucket: this.bucketName,
       Key: key,
       Body: file.buffer,
       ContentType: file.mimetype,
@@ -35,16 +35,26 @@ export class S3Service {
 
     await this.s3Client.send(command);
 
-    const getCommand = new GetObjectCommand({
-      Bucket: bucketName,
+    return this.getPublicUrl(key);
+  }
+
+  async deleteFile(fileUrl: string): Promise<void> {
+    const key = this.getKeyFromUrl(fileUrl);
+
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucketName,
       Key: key,
     });
 
-    const url = await getSignedUrl(this.s3Client, getCommand, {
-      expiresIn: 3600,
-      signingDate: new Date(),
-    });
+    await this.s3Client.send(command);
+  }
 
-    return url;
+  private getPublicUrl(key: string): string {
+    return `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+  }
+
+  private getKeyFromUrl(url: string): string {
+    const urlParts = url.split('/');
+    return urlParts[urlParts.length - 1];
   }
 }

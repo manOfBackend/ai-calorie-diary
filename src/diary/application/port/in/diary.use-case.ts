@@ -11,4 +11,11 @@ export interface DiaryUseCase {
   ): Promise<Diary>;
   getDiaryById(id: string): Promise<Diary | null>;
   getDiariesByUserId(userId: string): Promise<Diary[]>;
+  updateDiary(
+    id: string,
+    content: string,
+    imageFile: Express.Multer.File | undefined,
+    userId: string,
+  ): Promise<Diary>;
+  deleteDiary(id: string, userId: string): Promise<void>;
 }

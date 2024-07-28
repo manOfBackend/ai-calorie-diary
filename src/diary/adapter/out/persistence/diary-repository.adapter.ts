@@ -42,6 +42,30 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
     return diaries.map(this.mapToDomain);
   }
 
+  async updateDiary(id: string, diary: Partial<Diary>): Promise<Diary> {
+    const updatedDiary = await this.prisma.diary.update({
+      where: { id },
+      data: {
+        content: diary.content,
+        imageUrl: diary.imageUrl,
+        updatedAt: new Date(),
+      },
+    });
+
+    return new Diary(
+      updatedDiary.id,
+      updatedDiary.content,
+      updatedDiary.imageUrl,
+      updatedDiary.userId,
+      updatedDiary.createdAt,
+      updatedDiary.updatedAt,
+    );
+  }
+
+  async deleteDiary(id: string): Promise<void> {
+    await this.prisma.diary.delete({ where: { id } });
+  }
+
   private mapToDomain(diary: any): Diary {
     return new Diary(
       diary.id,

@@ -6,6 +6,7 @@ import {
 } from '../port/out/diary-repository.port';
 import { S3Service } from '../../../common/s3/s3.service';
 import { Diary } from '../../domain/diary';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 describe('DiaryService', () => {
   let service: DiaryService;
@@ -17,10 +18,13 @@ describe('DiaryService', () => {
       createDiary: jest.fn(),
       findDiaryById: jest.fn(),
       findDiariesByUserId: jest.fn(),
+      updateDiary: jest.fn(),
+      deleteDiary: jest.fn(),
     };
 
     mockS3Service = {
       uploadFile: jest.fn(),
+      deleteFile: jest.fn(),
     } as unknown as jest.Mocked<S3Service>;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -64,7 +68,7 @@ describe('DiaryService', () => {
 
       const result = await service.createDiary(content, imageFile, userId);
 
-      // expect(mockS3Service.uploadFile).toHaveBeenCalledWith(imageFile);
+      expect(mockS3Service.uploadFile).toHaveBeenCalledWith(imageFile);
       expect(mockDiaryRepository.createDiary).toHaveBeenCalledWith(
         expect.any(Diary),
       );
@@ -95,5 +99,166 @@ describe('DiaryService', () => {
     });
   });
 
-  // Add more tests for getDiaryById and getDiariesByUserId methods
+  describe('updateDiary', () => {
+    it('should update a diary with new image', async () => {
+      const id = '1';
+      const content = 'Updated content';
+      const imageFile = {
+        buffer: Buffer.from('new image'),
+      } as Express.Multer.File;
+      const userId = '1';
+      const newImageUrl = 'http://new-image-url.com';
+      const updatedDiary = new Diary(
+        id,
+        content,
+        newImageUrl,
+        userId,
+        new Date(),
+        new Date(),
+      );
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(
+        new Diary(
+          id,
+          'Old content',
+          'http://old-image-url.com',
+          userId,
+          new Date(),
+          new Date(),
+        ),
+      );
+      mockS3Service.uploadFile.mockResolvedValue(newImageUrl);
+      mockDiaryRepository.updateDiary.mockResolvedValue(updatedDiary);
+
+      const result = await service.updateDiary(id, content, imageFile, userId);
+
+      expect(mockS3Service.uploadFile).toHaveBeenCalledWith(imageFile);
+      expect(mockDiaryRepository.updateDiary).toHaveBeenCalledWith(
+        id,
+        expect.objectContaining({ content, imageUrl: newImageUrl }),
+      );
+      expect(result).toEqual(updatedDiary);
+    });
+
+    it('should throw UnauthorizedException when user is not the owner', async () => {
+      const id = '1';
+      const content = 'Updated content';
+      const userId = '2';
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(
+        new Diary(id, 'Old content', null, '1', new Date(), new Date()),
+      );
+
+      await expect(
+        service.updateDiary(id, content, undefined, userId),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw NotFoundException when diary does not exist', async () => {
+      const id = '1';
+      const content = 'Updated content';
+      const userId = '1';
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(null);
+
+      await expect(
+        service.updateDiary(id, content, undefined, userId),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteDiary', () => {
+    it('should delete a diary', async () => {
+      const id = '1';
+      const userId = '1';
+      const diaryToDelete = new Diary(
+        id,
+        'Content',
+        'http://image-url.com',
+        userId,
+        new Date(),
+        new Date(),
+      );
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(diaryToDelete);
+      mockDiaryRepository.deleteDiary.mockResolvedValue();
+      mockS3Service.deleteFile.mockResolvedValue();
+
+      await service.deleteDiary(id, userId);
+
+      expect(mockDiaryRepository.deleteDiary).toHaveBeenCalledWith(id);
+      expect(mockS3Service.deleteFile).toHaveBeenCalledWith(
+        'http://image-url.com',
+      );
+    });
+
+    it('should throw UnauthorizedException when user is not the owner', async () => {
+      const id = '1';
+      const userId = '2';
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(
+        new Diary(id, 'Content', null, '1', new Date(), new Date()),
+      );
+
+      await expect(service.deleteDiary(id, userId)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw NotFoundException when diary does not exist', async () => {
+      const id = '1';
+      const userId = '1';
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(null);
+
+      await expect(service.deleteDiary(id, userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getDiaryById', () => {
+    it('should return a diary by id', async () => {
+      const id = '1';
+      const userId = '1';
+      const diary = new Diary(
+        id,
+        'Content',
+        null,
+        userId,
+        new Date(),
+        new Date(),
+      );
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(diary);
+
+      const result = await service.getDiaryById(id);
+
+      expect(result).toEqual(diary);
+    });
+
+    it('should throw NotFoundException when diary does not exist', async () => {
+      const id = '1';
+
+      mockDiaryRepository.findDiaryById.mockResolvedValue(null);
+
+      await expect(service.getDiaryById(id)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getDiariesByUserId', () => {
+    it('should return diaries for a user', async () => {
+      const userId = '1';
+      const diaries = [
+        new Diary('1', 'Content 1', null, userId, new Date(), new Date()),
+        new Diary('2', 'Content 2', null, userId, new Date(), new Date()),
+      ];
+
+      mockDiaryRepository.findDiariesByUserId.mockResolvedValue(diaries);
+
+      const result = await service.getDiariesByUserId(userId);
+
+      expect(result).toEqual(diaries);
+    });
+  });
 });
