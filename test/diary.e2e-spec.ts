@@ -9,7 +9,6 @@ import { JwtService } from '@nestjs/jwt';
 import * as path from 'node:path';
 
 jest.setTimeout(300000);
-const id = 0;
 describe('DiaryController (e2e)', () => {
   let app: INestApplication;
   let prismaService: PrismaService;

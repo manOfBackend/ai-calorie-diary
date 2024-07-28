@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -31,8 +35,15 @@ export class S3Service {
 
     await this.s3Client.send(command);
 
-    // Generate a pre-signed URL for the uploaded object
-    const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+    const getCommand = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    const url = await getSignedUrl(this.s3Client, getCommand, {
+      expiresIn: 3600,
+      signingDate: new Date(),
+    });
 
     return url;
   }

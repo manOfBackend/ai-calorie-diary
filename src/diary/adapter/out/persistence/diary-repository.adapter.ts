@@ -10,8 +10,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
   async createDiary(diary: Diary): Promise<Diary> {
     return this.prisma.$transaction(async (prisma) => {
       // 사용자 존재 여부 확인
-      const allUsers = await prisma.user.findMany();
-      console.log(allUsers);
       const user = await prisma.user.findUnique({
         where: { id: diary.userId },
       });
