@@ -21,19 +21,14 @@ import {
   DiaryUseCase,
 } from '../../../application/port/in/diary.use-case';
 import { CreateDiaryDto } from './dto/create-diary.dto';
+import { ApiTags, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiBody,
-  ApiParam,
-  ApiUnauthorizedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiHeader,
-} from '@nestjs/swagger';
+  SwaggerDiary,
+  SwaggerCreateDiary,
+  SwaggerGetDiary,
+  SwaggerUpdateDiary,
+  SwaggerDeleteDiary,
+} from './swagger.decorator';
 
 @ApiTags('diary')
 @Controller('diary')
@@ -41,8 +36,7 @@ import {
 @ApiBearerAuth()
 @ApiHeader({
   name: 'Authorization',
-  description:
-    'JWT 토큰sss. 예: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  description: 'JWT 토큰. 예: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
 })
 export class DiaryController {
   constructor(
@@ -52,97 +46,26 @@ export class DiaryController {
 
   @Post()
   @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({
-    summary: '일기 작성',
-    description:
-      '새로운 일기를 작성합니다. 텍스트 내용과 선택적으로 이미지를 포함할 수 있습니다.',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    type: CreateDiaryDto,
-    description: '일기 작성에 필요한 데이터',
-    examples: {
-      diary: {
-        summary: '일기 예시',
-        value: {
-          content:
-            '오늘은 정말 좋은 날이었습니다. 공원에서 산책을 하며 많은 생각을 했어요.',
-          image: '(binary)',
-        },
-      },
-    },
-  })
-  @ApiCreatedResponse({
-    description: '일기가 성공적으로 작성되었습니다.',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: '1234567890' },
-        content: {
-          type: 'string',
-          example: '오늘은 정말 좋은 날이었습니다...',
-        },
-        imageUrl: {
-          type: 'string',
-          example: 'https://example.com/images/1234567890.jpg',
-        },
-        userId: { type: 'string', example: '0987654321' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
+  @SwaggerDiary('일기 작성')
+  @SwaggerCreateDiary()
   async createDiary(
     @Body() createDiaryDto: CreateDiaryDto,
     @UploadedFile() image: Express.Multer.File,
     @Request() req,
   ) {
-    if (!req.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    const userId = req.user.id;
-    return this.diaryUseCase.createDiary(createDiaryDto.content, image, userId);
+    this.checkAuthentication(req);
+    return this.diaryUseCase.createDiary(
+      createDiaryDto.content,
+      image,
+      req.user.id,
+    );
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: '특정 일기 조회',
-    description: '지정된 ID의 일기를 조회합니다.',
-  })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: '조회할 일기의 ID',
-    schema: { type: 'string' },
-    example: '1234567890',
-  })
-  @ApiOkResponse({
-    description: '일기를 성공적으로 조회했습니다.',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: '1234567890' },
-        content: {
-          type: 'string',
-          example: '오늘은 정말 좋은 날이었습니다...',
-        },
-        imageUrl: {
-          type: 'string',
-          example: 'https://example.com/images/1234567890.jpg',
-        },
-        userId: { type: 'string', example: '0987654321' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
-  @ApiNotFoundResponse({ description: '지정된 ID의 일기를 찾을 수 없습니다.' })
+  @SwaggerDiary('특정 일기 조회')
+  @SwaggerGetDiary()
   async getDiary(@Param('id') id: string, @Request() req) {
-    if (!req.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
+    this.checkAuthentication(req);
     const diary = await this.diaryUseCase.getDiaryById(id);
     if (!diary) {
       throw new NotFoundException('Diary not found');
@@ -156,87 +79,43 @@ export class DiaryController {
   }
 
   @Get()
-  @ApiOperation({
-    summary: '사용자의 모든 일기 조회',
-    description: '현재 인증된 사용자의 모든 일기를 조회합니다.',
-  })
-  @ApiOkResponse({
-    description: '사용자의 모든 일기를 성공적으로 조회했습니다.',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', example: '1234567890' },
-          content: {
-            type: 'string',
-            example: '오늘은 정말 좋은 날이었습니다...',
-          },
-          imageUrl: {
-            type: 'string',
-            example: 'https://example.com/images/1234567890.jpg',
-          },
-          userId: { type: 'string', example: '0987654321' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-    },
-  })
-  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
+  @SwaggerDiary('사용자의 모든 일기 조회')
   async getUserDiaries(@Request() req) {
-    if (!req.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    const userId = req.user.id;
-    return this.diaryUseCase.getDiariesByUserId(userId);
+    this.checkAuthentication(req);
+    return this.diaryUseCase.getDiariesByUserId(req.user.id);
   }
 
   @Put(':id')
   @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({
-    summary: '일기 수정',
-    description: '특정 ID의 일기를 수정합니다.',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', required: true, description: '수정할 일기의 ID' })
-  @ApiBody({ type: CreateDiaryDto })
-  @ApiOkResponse({ description: '일기가 성공적으로 수정되었습니다.' })
-  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
-  @ApiNotFoundResponse({ description: '지정된 ID의 일기를 찾을 수 없습니다.' })
+  @SwaggerDiary('일기 수정')
+  @SwaggerUpdateDiary()
   async updateDiary(
     @Param('id') id: string,
     @Body() updateDiaryDto: CreateDiaryDto,
     @UploadedFile() image: Express.Multer.File,
     @Request() req,
   ) {
-    if (!req.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    const userId = req.user.id;
+    this.checkAuthentication(req);
     return this.diaryUseCase.updateDiary(
       id,
       updateDiaryDto.content,
       image,
-      userId,
+      req.user.id,
     );
   }
 
   @Delete(':id')
-  @ApiOperation({
-    summary: '일기 삭제',
-    description: '특정 ID의 일기를 삭제합니다.',
-  })
-  @ApiParam({ name: 'id', required: true, description: '삭제할 일기의 ID' })
-  @ApiOkResponse({ description: '일기가 성공적으로 삭제되었습니다.' })
-  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
-  @ApiNotFoundResponse({ description: '지정된 ID의 일기를 찾을 수 없습니다.' })
+  @SwaggerDiary('일기 삭제')
+  @SwaggerDeleteDiary()
   async deleteDiary(@Param('id') id: string, @Request() req) {
+    this.checkAuthentication(req);
+    await this.diaryUseCase.deleteDiary(id, req.user.id);
+    return { message: 'Diary successfully deleted' };
+  }
+
+  private checkAuthentication(req: any) {
     if (!req.user) {
       throw new UnauthorizedException('User not authenticated');
     }
-    const userId = req.user.id;
-    await this.diaryUseCase.deleteDiary(id, userId);
-    return { message: 'Diary successfully deleted' };
   }
 }
