@@ -11,6 +11,8 @@ import {
   Inject,
   UnauthorizedException,
   NotFoundException,
+  Delete,
+  Put,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
@@ -188,5 +190,53 @@ export class DiaryController {
     }
     const userId = req.user.id;
     return this.diaryUseCase.getDiariesByUserId(userId);
+  }
+
+  @Put(':id')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiOperation({
+    summary: '일기 수정',
+    description: '특정 ID의 일기를 수정합니다.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', required: true, description: '수정할 일기의 ID' })
+  @ApiBody({ type: CreateDiaryDto })
+  @ApiOkResponse({ description: '일기가 성공적으로 수정되었습니다.' })
+  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
+  @ApiNotFoundResponse({ description: '지정된 ID의 일기를 찾을 수 없습니다.' })
+  async updateDiary(
+    @Param('id') id: string,
+    @Body() updateDiaryDto: CreateDiaryDto,
+    @UploadedFile() image: Express.Multer.File,
+    @Request() req,
+  ) {
+    if (!req.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    const userId = req.user.id;
+    return this.diaryUseCase.updateDiary(
+      id,
+      updateDiaryDto.content,
+      image,
+      userId,
+    );
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: '일기 삭제',
+    description: '특정 ID의 일기를 삭제합니다.',
+  })
+  @ApiParam({ name: 'id', required: true, description: '삭제할 일기의 ID' })
+  @ApiOkResponse({ description: '일기가 성공적으로 삭제되었습니다.' })
+  @ApiUnauthorizedResponse({ description: '사용자가 인증되지 않았습니다.' })
+  @ApiNotFoundResponse({ description: '지정된 ID의 일기를 찾을 수 없습니다.' })
+  async deleteDiary(@Param('id') id: string, @Request() req) {
+    if (!req.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    const userId = req.user.id;
+    await this.diaryUseCase.deleteDiary(id, userId);
+    return { message: 'Diary successfully deleted' };
   }
 }
