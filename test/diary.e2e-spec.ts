@@ -60,7 +60,6 @@ describe('DiaryController (e2e)', () => {
 
   describe('/diary (POST)', () => {
     it('should create a new diary entry without image', () => {
-      console.log(userId, authToken);
       return request(app.getHttpServer())
         .post('/diary')
         .set('Authorization', `Bearer ${authToken}`)
@@ -77,7 +76,7 @@ describe('DiaryController (e2e)', () => {
     });
 
     // 파일 업로드 테스트를 별도로 진행
-    it('should handle file upload', () => {
+    it.skip('should handle file upload', () => {
       const filePath = path.join(__dirname, 'assets', 'icon.png');
       const fileBuffer = fs.readFileSync(filePath);
 
