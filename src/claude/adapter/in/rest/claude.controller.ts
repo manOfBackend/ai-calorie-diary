@@ -9,10 +9,10 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ClaudeService } from '../../../application/service/claude.service';
-import { PromptDto } from './dto/prompt.dto';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ClaudeResponseDto } from './dto/claude-response.dto';
+import { ClaudeService } from '@claude/application/service/claude.service';
+import { ClaudeResponseDto } from '@claude/adapter/in/rest/dto/claude-response.dto';
+import { PromptDto } from '@claude/adapter/in/rest/dto/prompt.dto';
 
 @ApiTags('claude')
 @Controller('claude')

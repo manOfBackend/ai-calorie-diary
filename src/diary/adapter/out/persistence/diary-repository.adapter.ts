@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../../common/prisma/prisma.service';
-import { DiaryRepositoryPort } from '../../../application/port/out/diary-repository.port';
-import { Diary } from '../../../domain/diary';
+import { PrismaService } from '@common/prisma/prisma.service';
+import { DiaryRepositoryPort } from '@diary/application/port/out/diary-repository.port';
+import { Diary } from '@diary/domain/diary';
 
 @Injectable()
 export class DiaryRepositoryAdapter implements DiaryRepositoryPort {

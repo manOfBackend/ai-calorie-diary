@@ -1,4 +1,4 @@
-import { Diary } from '../../../domain/diary';
+import { Diary } from '@diary/domain/diary';
 
 export const DIARY_REPOSITORY_PORT = 'DIARY_REPOSITORY_PORT';
 

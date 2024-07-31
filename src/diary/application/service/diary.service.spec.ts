@@ -4,9 +4,9 @@ import {
   DIARY_REPOSITORY_PORT,
   DiaryRepositoryPort,
 } from '../port/out/diary-repository.port';
-import { S3Service } from '../../../common/s3/s3.service';
-import { Diary } from '../../domain/diary';
+import { S3Service } from '@common/s3/s3.service';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Diary } from '@diary/domain/diary';
 
 describe('DiaryService', () => {
   let service: DiaryService;

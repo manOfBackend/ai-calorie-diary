@@ -5,14 +5,15 @@ import {
   UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+
+import { RefreshToken } from '@auth/domain/refresh-token';
+import * as bcrypt from 'bcrypt';
+import { User } from '@auth/domain/user';
 import {
   USER_REPOSITORY_PORT,
   UserRepositoryPort,
-} from '../port/out/user-repository.port';
-import { User } from '../../domain/user';
-import { RefreshToken } from '../../domain/refresh-token';
-import * as bcrypt from 'bcrypt';
+} from '@auth/application/port/out/user-repository.port';
+import { AuthService } from '@auth/application/service/auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;

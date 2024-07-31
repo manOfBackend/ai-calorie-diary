@@ -1,4 +1,4 @@
-import { ClaudeResponse } from '../../../domain/claude-response';
+import { ClaudeResponse } from '@claude/domain/claude-response';
 
 export const CLAUDE_API_PORT = 'CLAUDE_API_PORT';
 export interface ClaudeApiPort {

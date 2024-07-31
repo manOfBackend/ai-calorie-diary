@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClaudeController } from './claude.controller';
-import { ClaudeService } from '../../../application/service/claude.service';
+import { ClaudeService } from '@claude/application/service/claude.service';
 import { PromptDto } from './dto/prompt.dto';
 
 describe('ClaudeController', () => {

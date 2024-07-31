@@ -14,7 +14,7 @@ import {
   NotFoundResponseDto,
   BadRequestResponseDto,
   InternalServerErrorResponseDto,
-} from '../../../../common/dto/error-responses.dto';
+} from '@common/dto/error-responses.dto';
 
 export function SwaggerDiary(summary: string) {
   return applyDecorators(
