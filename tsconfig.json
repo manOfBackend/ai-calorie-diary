@@ -15,7 +15,8 @@
       "@common/*": ["./src/common/*"],
       "@claude/*": ["./src/claude/*"],
       "@auth/*": ["./src/auth/*"],
-      "@diary/*": ["./src/diary/*"]
+      "@diary/*": ["./src/diary/*"],
+      "@food/*": ["./src/food/*"],
     },
     "incremental": true,
     "skipLibCheck": true,
