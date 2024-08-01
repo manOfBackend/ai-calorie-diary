@@ -9,7 +9,7 @@
     "generate": "npx prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "pnpm run generate && nest start",
+    "start": "pnpm run generate && ts-node -r tsconfig-paths/register src/main.ts nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -48,9 +48,11 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "winston": "^3.13.1"
   },
   "devDependencies": {
+    "@jest/types": "^29.6.3",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/devtools-integration": "^0.1.6",
     "@nestjs/schematics": "^10.0.0",
@@ -81,22 +83,5 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.2"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
-  }
+    }
 }
