@@ -44,6 +44,7 @@
     "cookie-parser": "^1.4.6",
     "effect": "^3.4.5",
     "install": "^0.13.0",
+    "openai": "^4.53.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.0",
@@ -83,5 +84,5 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.2"
-    }
+  }
 }
