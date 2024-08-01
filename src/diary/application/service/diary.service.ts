@@ -1,17 +1,17 @@
-// diary.service.ts
 import {
   Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DiaryUseCase } from '../port/in/diary.use-case';
+
+import { S3Service } from '@common/s3/s3.service';
+import { Diary } from '@diary/domain/diary';
+import { DiaryUseCase } from '@diary/application/port/in/diary.use-case';
 import {
   DIARY_REPOSITORY_PORT,
   DiaryRepositoryPort,
-} from '../port/out/diary-repository.port';
-import { S3Service } from '../../../common/s3/s3.service';
-import { Diary } from '../../domain/diary';
+} from '@diary/application/port/out/diary-repository.port';
 
 @Injectable()
 export class DiaryService implements DiaryUseCase {

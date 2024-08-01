@@ -1,5 +1,4 @@
-// diary.use-case.ts
-import { Diary } from '../../../domain/diary';
+import { Diary } from '@diary/domain/diary';
 
 export const DIARY_USE_CASE = 'DIARY_USE_CASE';
 

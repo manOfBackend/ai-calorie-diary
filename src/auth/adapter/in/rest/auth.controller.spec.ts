@@ -3,13 +3,13 @@ import { AuthController } from './auth.controller';
 import {
   AUTH_USE_CASE,
   AuthUseCase,
-} from '../../../application/port/in/auth.use-case';
+} from '@auth/application/port/in/auth.use-case';
 import {
   ConflictException,
   UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '../../../domain/user';
+import { User } from '@auth/domain/user';
 import { Request } from 'express';
 
 describe('AuthController', () => {

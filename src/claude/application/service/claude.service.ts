@@ -1,7 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { ClaudeUseCase } from '../port/in/claude.use-case';
-import { CLAUDE_API_PORT, ClaudeApiPort } from '../port/out/claude-api.port';
-import { ClaudeResponse } from '../../domain/claude-response';
+import { ClaudeResponse } from '@claude/domain/claude-response';
+import {
+  CLAUDE_API_PORT,
+  ClaudeApiPort,
+} from '@claude/application/port/out/claude-api.port';
+import { ClaudeUseCase } from '@claude/application/port/in/claude.use-case';
 
 @Injectable()
 export class ClaudeService implements ClaudeUseCase {

@@ -3,6 +3,7 @@
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
+    "resolveJsonModule": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
@@ -10,6 +11,12 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "@common/*": ["./src/common/*"],
+      "@claude/*": ["./src/claude/*"],
+      "@auth/*": ["./src/auth/*"],
+      "@diary/*": ["./src/diary/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,

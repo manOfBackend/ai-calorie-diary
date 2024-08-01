@@ -16,12 +16,12 @@ import { Request } from 'express';
 import {
   AUTH_USE_CASE,
   AuthUseCase,
-} from '../../../application/port/in/auth.use-case';
+} from '@auth/application/port/in/auth.use-case';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { LoginCommand } from '../../../application/port/in/dto/login.command';
-import { RefreshTokenCommand } from '../../../application/port/in/dto/refresh-token.command';
-import { RegisterCommand } from '../../../application/port/in/dto/register.command';
+import { LoginCommand } from '@auth/application/port/in/dto/login.command';
+import { RefreshTokenCommand } from '@auth/application/port/in/dto/refresh-token.command';
+import { RegisterCommand } from '@auth/application/port/in/dto/register.command';
 import { RegisterDto } from './dto/register.dto';
 import {
   ApiOperation,
@@ -30,8 +30,8 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
-import { ErrorResponseDto } from '../../../../common/dto/error-response.dto';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { ErrorResponseDto } from '@common/dto/error-response.dto';
 
 @ApiTags('auth')
 @Controller('auth')

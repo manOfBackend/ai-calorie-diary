@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../../common/prisma/prisma.service';
-import { UserRepositoryPort } from '../../../application/port/out/user-repository.port';
-import { User } from '../../../domain/user';
-import { RefreshToken } from '../../../domain/refresh-token';
+import { PrismaService } from '@common/prisma/prisma.service';
+import { UserRepositoryPort } from '@auth/application/port/out/user-repository.port';
+import { User } from '@auth/domain/user';
+import { RefreshToken } from '@auth/domain/refresh-token';
 
 @Injectable()
 export class UserRepositoryAdapter implements UserRepositoryPort {

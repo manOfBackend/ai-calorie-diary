@@ -1,4 +1,4 @@
-import { ClaudeResponse } from '../../../domain/claude-response';
+import { ClaudeResponse } from '@claude/domain/claude-response';
 
 export interface ClaudeUseCase {
   getStreamingResponse(prompt: string): Promise<AsyncIterable<ClaudeResponse>>;
