@@ -4,11 +4,16 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
+import { CustomLoggerService } from '@common/logger/custom-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new CustomLoggerService();
+
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
   app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalFilters(new AllExceptionsFilter(logger));
   app.setGlobalPrefix('api');
   app.use(cookieParser());
 
