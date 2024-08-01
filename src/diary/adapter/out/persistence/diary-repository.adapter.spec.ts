@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../../../../common/prisma/prisma.service';
+import { PrismaService } from '@common/prisma/prisma.service';
 import { DiaryRepositoryAdapter } from './diary-repository.adapter';
-import { Diary } from '../../../domain/diary';
+import { Diary } from '@diary/domain/diary';
 
 describe('DiaryRepositoryAdapter', () => {
   let adapter: DiaryRepositoryAdapter;

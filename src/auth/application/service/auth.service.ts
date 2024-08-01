@@ -7,15 +7,15 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { AuthUseCase } from '../port/in/auth.use-case';
 import {
   USER_REPOSITORY_PORT,
   UserRepositoryPort,
-} from '../port/out/user-repository.port';
-import { LoginCommand } from '../port/in/dto/login.command';
-import { RefreshTokenCommand } from '../port/in/dto/refresh-token.command';
-import { RegisterCommand } from '../port/in/dto/register.command';
-import { User } from '../../domain/user';
+} from '@auth/application/port/out/user-repository.port';
+import { AuthUseCase } from '@auth/application/port/in/auth.use-case';
+import { LoginCommand } from '@auth/application/port/in/dto/login.command';
+import { User } from '@auth/domain/user';
+import { RefreshTokenCommand } from '@auth/application/port/in/dto/refresh-token.command';
+import { RegisterCommand } from '@auth/application/port/in/dto/register.command';
 
 @Injectable()
 export class AuthService implements AuthUseCase {

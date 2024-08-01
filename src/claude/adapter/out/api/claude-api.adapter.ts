@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
-import { ClaudeApiPort } from '../../../application/port/out/claude-api.port';
-import { ClaudeResponse } from '../../../domain/claude-response';
+import { ClaudeApiPort } from '@claude/application/port/out/claude-api.port';
+import { ClaudeResponse } from '@claude/domain/claude-response';
 
 @Injectable()
 export class ClaudeApiAdapter implements ClaudeApiPort {

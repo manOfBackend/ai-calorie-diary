@@ -1,10 +1,8 @@
-// test/diary.e2e-spec.ts
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { PrismaService } from '../src/common/prisma/prisma.service';
+import { PrismaService } from '@common/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as path from 'node:path';
 import * as fs from 'node:fs';

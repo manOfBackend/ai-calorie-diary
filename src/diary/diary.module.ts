@@ -3,8 +3,8 @@ import { DiaryController } from './adapter/in/rest/diary.controller';
 import { DiaryService } from './application/service/diary.service';
 import { DiaryRepositoryAdapter } from './adapter/out/persistence/diary-repository.adapter';
 import { DIARY_REPOSITORY_PORT } from './application/port/out/diary-repository.port';
-import { S3Service } from '../common/s3/s3.service';
-import { PrismaService } from '../common/prisma/prisma.service';
+import { S3Service } from '@common/s3/s3.service';
+import { PrismaService } from '@common/prisma/prisma.service';
 import { DIARY_USE_CASE } from './application/port/in/diary.use-case';
 
 @Module({

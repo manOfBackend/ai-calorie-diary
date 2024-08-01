@@ -6,9 +6,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { CustomLoggerService } from '@common/logger/custom-logger.service';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  constructor(private readonly loggerService: CustomLoggerService) {}
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -26,6 +29,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error = exception.name;
       errorCode = exceptionResponse.errorCode || this.getErrorCode(status);
     }
+
+    this.loggerService.error(
+      `${request.method} ${request.url}`,
+      exception instanceof Error ? exception.stack : '',
+      'ExceptionFilter',
+    );
 
     response.status(status).json({
       statusCode: status,

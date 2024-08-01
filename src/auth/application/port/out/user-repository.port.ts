@@ -1,5 +1,5 @@
-import { User } from '../../../domain/user';
-import { RefreshToken } from '../../../domain/refresh-token';
+import { User } from '@auth/domain/user';
+import { RefreshToken } from '@auth/domain/refresh-token';
 
 export const USER_REPOSITORY_PORT = 'USER_REPOSITORY_PORT';
 export interface UserRepositoryPort {

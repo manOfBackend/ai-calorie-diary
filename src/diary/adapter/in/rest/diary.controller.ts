@@ -15,11 +15,11 @@ import {
   Put,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import {
   DIARY_USE_CASE,
   DiaryUseCase,
-} from '../../../application/port/in/diary.use-case';
+} from '@diary/application/port/in/diary.use-case';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { ApiTags, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import {
