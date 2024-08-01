@@ -6,5 +6,18 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "setupFilesAfterEnv": ["<rootDir>/setup.ts"]
+  "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
+  "moduleNameMapper": {
+    "^@claude/(.*)$": "<rootDir>/../src/claude/$1",
+    "^@common/(.*)$": "<rootDir>..//src/common/$1",
+    "^@auth/(.*)$": "<rootDir>/../src/auth/$1",
+    "^@diary/(.*)$": "<rootDir>/../src/diary/$1"
+  },
+  "modulePaths": ["<rootDir>"],
+  "testPathIgnorePatterns": ["/node_modules/", "/dist/"],
+  "globals": {
+    "ts-jest": {
+      "tsconfig": "tsconfig.json"
+    }
+  }
 }
