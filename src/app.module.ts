@@ -5,6 +5,10 @@ import { PrismaModule } from '@common/prisma/prisma.module';
 import { ClaudeModule } from '@claude/claude.module';
 import { DiaryModule } from '@diary/diary.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { FoodModule } from '@food/food.module';
+import { InMemoryEventBus } from '@common/events/in-memory-event-bus';
+import { EventPublisherSymbol } from '@common/events/event-publisher.interface';
+import { EventSubscriberSymbol } from '@common/events/event-subscriber.interface';
 
 @Module({
   imports: [
@@ -33,6 +37,17 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ClaudeModule,
     AuthModule,
     DiaryModule,
+    FoodModule,
+  ],
+  providers: [
+    {
+      provide: EventPublisherSymbol,
+      useClass: InMemoryEventBus,
+    },
+    {
+      provide: EventSubscriberSymbol,
+      useClass: InMemoryEventBus,
+    },
   ],
 })
 export class AppModule {}
