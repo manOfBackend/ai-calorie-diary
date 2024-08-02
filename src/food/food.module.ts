@@ -5,8 +5,6 @@ import { OpenAIApiAdapter } from './adapter/out/api/openai-api.adapter';
 import { S3Service } from '@common/s3/s3.service';
 import { FOOD_USE_CASE } from './application/port/in/food.use-case';
 import { OpenAIApiPortSymbol } from './application/port/out/openai-api.port';
-import { EventPublisherSymbol } from '@common/events/event-publisher.interface';
-import { InMemoryEventBus } from '@common/events/in-memory-event-bus';
 
 @Module({
   controllers: [FoodController],
@@ -18,10 +16,6 @@ import { InMemoryEventBus } from '@common/events/in-memory-event-bus';
     {
       provide: OpenAIApiPortSymbol,
       useClass: OpenAIApiAdapter,
-    },
-    {
-      provide: EventPublisherSymbol,
-      useClass: InMemoryEventBus,
     },
     S3Service,
   ],

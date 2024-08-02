@@ -9,9 +9,11 @@ import { FoodModule } from '@food/food.module';
 import { InMemoryEventBus } from '@common/events/in-memory-event-bus';
 import { EventPublisherSymbol } from '@common/events/event-publisher.interface';
 import { EventSubscriberSymbol } from '@common/events/event-subscriber.interface';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'short',

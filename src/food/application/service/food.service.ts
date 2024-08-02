@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FoodUseCase } from '@food/application/port/in/food.use-case';
 import {
   OpenAIApiPortSymbol,
@@ -6,10 +7,6 @@ import {
 } from '../port/out/openai-api.port';
 import { FoodAnalysis } from '@food/domain/food-analysis';
 import { S3Service } from '@common/s3/s3.service';
-import {
-  EventPublisher,
-  EventPublisherSymbol,
-} from '@common/events/event-publisher.interface';
 import { FoodAnalyzedEvent } from '@food/domain/events/food-analyzed.event';
 
 @Injectable()
@@ -18,8 +15,7 @@ export class FoodService implements FoodUseCase {
     @Inject(OpenAIApiPortSymbol)
     private readonly openAIApiPort: OpenAIApiPort,
     private readonly s3Service: S3Service,
-    @Inject(EventPublisherSymbol)
-    private readonly eventPublisher: EventPublisher,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async analyzeFoodImage(
@@ -33,7 +29,8 @@ export class FoodService implements FoodUseCase {
       description,
     );
 
-    await this.eventPublisher.publish(
+    this.eventEmitter.emit(
+      'food.analyzed',
       new FoodAnalyzedEvent({
         userId,
         imageUrl,
@@ -41,13 +38,6 @@ export class FoodService implements FoodUseCase {
         analysis: foodAnalysis,
       }),
     );
-    //
-    // await this.kafkaProducer.produce('food.analyzed', {
-    //   userId,
-    //   imageUrl,
-    //   description,
-    //   analysis: foodAnalysis,
-    // });
 
     return foodAnalysis;
   }

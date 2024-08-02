@@ -11,6 +11,8 @@ export class OpenAIApiAdapter implements OpenAIApiPort {
   constructor(private configService: ConfigService) {
     this.openai = new OpenAI({
       apiKey: this.configService.getOrThrow<string>('OPENAI_API_KEY'),
+      organization: this.configService.getOrThrow<string>('OPENAI_ORG_ID'),
+      project: this.configService.getOrThrow<string>('OPENAI_PROJECT_ID'),
     });
   }
 
@@ -19,7 +21,7 @@ export class OpenAIApiAdapter implements OpenAIApiPort {
     description: string,
   ): Promise<FoodAnalysis> {
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',

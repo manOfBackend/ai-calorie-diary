@@ -1,4 +1,4 @@
-import { FoodAnalysis } from '../../../domain/food-analysis';
+import { FoodAnalysis } from '@food/domain/food-analysis';
 
 export interface FoodUseCase {
   analyzeFoodImage(
