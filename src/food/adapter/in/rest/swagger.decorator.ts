@@ -31,31 +31,50 @@ export function SwaggerFood(summary: string) {
 export function SwaggerAnalyzeFoodImage() {
   return applyDecorators(
     ApiConsumes('multipart/form-data'),
-    ApiBody({ type: FoodAnalysisDto }),
+    ApiBody({
+      description: '음식 이미지 분석을 위한 요청',
+      type: FoodAnalysisDto,
+      schema: {
+        type: 'object',
+        properties: {
+          image: {
+            type: 'string',
+            format: 'binary',
+            description: '분석할 음식 이미지 (최대 5MB)',
+          },
+          description: {
+            type: 'string',
+            description: '음식에 대한 추가 설명',
+          },
+        },
+      },
+    }),
     ApiResponse({
       status: 201,
-      description: '음식 이미지가 성공적으로 분석되었습니다.',
+      description: '음식 이미지 분석 결과',
       schema: {
         type: 'object',
         properties: {
           ingredients: {
             type: 'array',
             items: { type: 'string' },
-            example: ['rice', 'chicken', 'vegetables'],
+            description: '식별된 재료 목록',
           },
-          totalCalories: { type: 'number', example: 500 },
+          totalCalories: {
+            type: 'number',
+            description: '총 칼로리',
+          },
           breakdown: {
             type: 'object',
             additionalProperties: { type: 'number' },
-            example: { rice: 200, chicken: 250, vegetables: 50 },
+            description: '재료별 칼로리 분석',
           },
         },
       },
     }),
     ApiResponse({
       status: 400,
-      description: '잘못된 요청',
-      type: BadRequestResponseDto,
+      description: '잘못된 요청 (예: 파일 크기 초과)',
     }),
   );
 }

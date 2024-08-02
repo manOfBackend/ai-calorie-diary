@@ -8,6 +8,7 @@ import {
 import { FoodAnalysis } from '@food/domain/food-analysis';
 import { S3Service } from '@common/s3/s3.service';
 import { FoodAnalyzedEvent } from '@food/domain/events/food-analyzed.event';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class FoodService implements FoodUseCase {
@@ -23,12 +24,19 @@ export class FoodService implements FoodUseCase {
     description: string,
     userId: string,
   ): Promise<FoodAnalysis> {
-    const imageUrl = await this.s3Service.uploadFile(image);
+    // 이미지 압축
+    const compressedImage = await this.compressImage(image);
+
+    // S3에 압축된 이미지 업로드
+    const imageUrl = await this.s3Service.uploadFile(compressedImage);
+
+    // OpenAI API를 사용하여 음식 분석
     const foodAnalysis = await this.openAIApiPort.analyzeFood(
-      image,
+      compressedImage,
       description,
     );
 
+    // 이벤트 발행
     this.eventEmitter.emit(
       'food.analyzed',
       new FoodAnalyzedEvent({
@@ -40,5 +48,20 @@ export class FoodService implements FoodUseCase {
     );
 
     return foodAnalysis;
+  }
+
+  private async compressImage(
+    file: Express.Multer.File,
+  ): Promise<Express.Multer.File> {
+    const compressedImageBuffer = await sharp(file.buffer)
+      .resize(800) // 최대 너비 800px로 조정
+      .jpeg({ quality: 80 }) // JPEG 형식으로 변환, 품질 80%
+      .toBuffer();
+
+    return {
+      ...file,
+      buffer: compressedImageBuffer,
+      size: compressedImageBuffer.length,
+    };
   }
 }

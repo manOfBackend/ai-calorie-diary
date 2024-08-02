@@ -7,6 +7,9 @@ import {
   UseInterceptors,
   Inject,
   UseGuards,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -38,7 +41,20 @@ export class FoodController {
   @SwaggerAnalyzeFoodImage()
   async analyzeFoodImage(
     @Body() foodAnalysisDto: FoodAnalysisDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 3 * 1024 * 1024,
+            message: '파일 크기는 3MB를 초과할 수 없습니다.',
+          }),
+        ],
+        exceptionFactory: (error) => {
+          throw new BadRequestException(error);
+        },
+      }),
+    )
+    file: Express.Multer.File,
     @Request() req,
   ) {
     return this.foodUseCase.analyzeFoodImage(
