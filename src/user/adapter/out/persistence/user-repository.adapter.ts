@@ -15,6 +15,8 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
 
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
+    const allUsers = await this.prisma.user.findMany();
+    console.log(allUsers, user);
     return user ? this.mapToUser(user) : null;
   }
 
