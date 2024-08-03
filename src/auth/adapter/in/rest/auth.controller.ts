@@ -1,16 +1,15 @@
 import {
-  Controller,
-  Post,
-  Body,
-  UnauthorizedException,
-  Inject,
-  ConflictException,
-  HttpStatus,
-  Get,
-  UseGuards,
-  Req,
   BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
   HttpCode,
+  HttpStatus,
+  Inject,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import {
@@ -24,11 +23,11 @@ import { RefreshTokenCommand } from '@auth/application/port/in/dto/refresh-token
 import { RegisterCommand } from '@auth/application/port/in/dto/register.command';
 import { RegisterDto } from './dto/register.dto';
 import {
+  ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiBearerAuth,
-  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { ErrorResponseDto } from '@common/dto/error-response.dto';
@@ -169,26 +168,5 @@ export class AuthController {
     const userId = req.user['id'];
     await this.authUseCase.logout(userId);
     return { message: 'Logout successful' };
-  }
-
-  @ApiOperation({ summary: '현재 사용자 정보 조회' })
-  @ApiResponse({
-    status: 200,
-    description: '사용자 정보 조회 성공',
-    schema: {
-      properties: {
-        id: { type: 'string' },
-        email: { type: 'string' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  async getCurrentUser(@Req() req: Request) {
-    const userId = req.user['id'];
-    const user = await this.authUseCase.getUserById(userId);
-    return { id: user.id, email: user.email };
   }
 }
