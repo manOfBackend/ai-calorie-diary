@@ -2,7 +2,6 @@ import {
   ConflictException,
   Inject,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -91,14 +90,6 @@ export class AuthService implements AuthUseCase {
 
   async logout(userId: string): Promise<void> {
     await this.userService.deleteRefreshToken(userId);
-  }
-
-  async getUserById(userId: string): Promise<User> {
-    const user = await this.userService.findById(userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
   }
 
   private async generateTokens(

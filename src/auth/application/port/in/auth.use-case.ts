@@ -16,5 +16,4 @@ export interface AuthUseCase {
     command: RegisterCommand,
   ): Promise<{ user: User; accessToken: string; refreshToken: string }>;
   logout(userId: string): Promise<void>;
-  getUserById(userId: string): Promise<User>;
 }

@@ -1,16 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import {
-  ConflictException,
-  UnauthorizedException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 
 import * as bcrypt from 'bcrypt';
 import { User } from '@user/domain/user';
 import { AuthService } from '@auth/application/service/auth.service';
-import { UserUseCase } from '@user/application/port/in/user.use-case';
-import { USER_USE_CASE } from '@user/application/port/in/user.use-case';
+import {
+  USER_USE_CASE,
+  UserUseCase,
+} from '@user/application/port/in/user.use-case';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -297,42 +295,6 @@ describe('AuthService', () => {
       await service.logout(userId);
 
       expect(userUseCaseMock.deleteRefreshToken).toHaveBeenCalledWith(userId);
-    });
-  });
-
-  describe('getUserById', () => {
-    it('should return user for valid id', async () => {
-      const userId = '1';
-      const user = new User(
-        userId,
-        'test@example.com',
-        'hashedPassword',
-        2000,
-        new Date(),
-        new Date(),
-      );
-
-      userUseCaseMock.findById.mockResolvedValue(user);
-
-      const result = await service.getUserById(userId);
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          id: user.id,
-          email: user.email,
-        }),
-      );
-      expect(userUseCaseMock.findById).toHaveBeenCalledWith(userId);
-    });
-
-    it('should throw NotFoundException for non-existent user', async () => {
-      const userId = 'nonexistent';
-
-      userUseCaseMock.findById.mockResolvedValue(null);
-
-      await expect(service.getUserById(userId)).rejects.toThrow(
-        NotFoundException,
-      );
     });
   });
 });
