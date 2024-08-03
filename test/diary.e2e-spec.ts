@@ -109,25 +109,39 @@ describe('DiaryController (e2e)', () => {
 
   describe('/diary (GET)', () => {
     it('should get all diaries for the user', async () => {
-      // 테스트용 일기 생성
-      await prismaService.diary.create({
-        data: {
-          content: 'Test diary content',
-          userId: userId,
-        },
+      // 테스트용 일기 여러 개 생성
+      const diariesToCreate = [
+        { content: 'Test diary content 1', userId },
+        { content: 'Test diary content 2', userId },
+        { content: 'Test diary content 3', userId },
+      ];
+
+      await prismaService.$transaction(async (prisma) => {
+        await Promise.all(
+          diariesToCreate.map((diary) => prisma.diary.create({ data: diary })),
+        );
       });
 
-      return request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get('/diary')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(200)
-        .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-          expect(res.body.length).toBeGreaterThan(0);
-          expect(res.body[0]).toHaveProperty('id');
-          expect(res.body[0]).toHaveProperty('content');
-          expect(res.body[0].userId).toBe(userId);
-        });
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(diariesToCreate.length);
+
+      response.body.forEach((diary, index) => {
+        expect(diary).toHaveProperty('id');
+        expect(diary).toHaveProperty('content');
+        expect(diary.content).toBe(diariesToCreate[index].content);
+        expect(diary.userId).toBe(userId);
+      });
+
+      // 데이터베이스에서 직접 확인
+      const diariesInDb = await prismaService.diary.findMany({
+        where: { userId },
+      });
+      expect(diariesInDb.length).toBe(diariesToCreate.length);
     });
   });
 
