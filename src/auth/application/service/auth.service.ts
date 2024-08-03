@@ -1,34 +1,29 @@
 import {
   ConflictException,
-  Inject,
   Injectable,
-  UnauthorizedException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import {
-  USER_REPOSITORY_PORT,
-  UserRepositoryPort,
-} from '@auth/application/port/out/user-repository.port';
 import { AuthUseCase } from '@auth/application/port/in/auth.use-case';
 import { LoginCommand } from '@auth/application/port/in/dto/login.command';
-import { User } from '@auth/domain/user';
+import { User } from '@user/domain/user';
 import { RefreshTokenCommand } from '@auth/application/port/in/dto/refresh-token.command';
 import { RegisterCommand } from '@auth/application/port/in/dto/register.command';
+import { UserService } from '@user/application/service/user.service';
 
 @Injectable()
 export class AuthService implements AuthUseCase {
   constructor(
-    @Inject(USER_REPOSITORY_PORT)
-    private readonly userRepository: UserRepositoryPort,
+    private readonly userService: UserService,
     private readonly jwtService: JwtService,
   ) {}
 
   async login(
     command: LoginCommand,
   ): Promise<{ accessToken: string; refreshToken: string; user: User }> {
-    const user = await this.userRepository.findByEmail(command.email);
+    const user = await this.userService.findByEmail(command.email);
 
     if (!user || !(await bcrypt.compare(command.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
@@ -39,14 +34,35 @@ export class AuthService implements AuthUseCase {
     return { accessToken, refreshToken, user };
   }
 
+  async register(
+    command: RegisterCommand,
+  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    const existingUser = await this.userService.findByEmail(command.email);
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(command.password, 10);
+    const user = new User(
+      null,
+      command.email,
+      hashedPassword,
+      2000,
+      new Date(),
+      new Date(),
+    );
+    const savedUser = await this.userService.create(user);
+    const { accessToken, refreshToken } = await this.generateTokens(savedUser);
+
+    return { user: savedUser, accessToken, refreshToken };
+  }
+
   async refreshToken(
     command: RefreshTokenCommand,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       const payload = this.jwtService.verify(command.refreshToken);
-      const storedToken = await this.userRepository.findRefreshToken(
-        payload.sub,
-      );
+      const storedToken = await this.userService.findRefreshToken(payload.sub);
 
       if (
         !storedToken ||
@@ -56,9 +72,9 @@ export class AuthService implements AuthUseCase {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      await this.userRepository.deleteRefreshToken(payload.sub);
+      await this.userService.deleteRefreshToken(payload.sub);
 
-      const user = await this.userRepository.findById(payload.sub);
+      const user = await this.userService.findById(payload.sub);
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
@@ -69,35 +85,12 @@ export class AuthService implements AuthUseCase {
     }
   }
 
-  async register(
-    command: RegisterCommand,
-  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
-    const existingUser = await this.userRepository.findByEmail(command.email);
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(command.password, 10);
-    const user = new User(
-      null,
-      command.email,
-      hashedPassword,
-      new Date(),
-      new Date(),
-    );
-
-    const savedUser = await this.userRepository.save(user);
-    const { accessToken, refreshToken } = await this.generateTokens(savedUser);
-
-    return { user: savedUser, accessToken, refreshToken };
-  }
-
   async logout(userId: string): Promise<void> {
-    await this.userRepository.deleteRefreshToken(userId);
+    await this.userService.deleteRefreshToken(userId);
   }
 
   async getUserById(userId: string): Promise<User> {
-    const user = await this.userRepository.findById(userId);
+    const user = await this.userService.findById(userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -113,11 +106,7 @@ export class AuthService implements AuthUseCase {
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
-    await this.userRepository.saveRefreshToken(
-      user.id,
-      refreshToken,
-      expiresAt,
-    );
+    await this.userService.saveRefreshToken(user.id, refreshToken, expiresAt);
 
     return { accessToken, refreshToken };
   }

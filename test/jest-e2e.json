@@ -12,7 +12,8 @@
     "^@common/(.*)$": "<rootDir>..//src/common/$1",
     "^@auth/(.*)$": "<rootDir>/../src/auth/$1",
     "^@diary/(.*)$": "<rootDir>/../src/diary/$1",
-    "^@food/(.*)$": "<rootDir>/../src/food/$1"
+    "^@food/(.*)$": "<rootDir>/../src/food/$1",
+    "^@user/(.*)$": "<rootDir>/../src/user/$1"
   },
   "modulePaths": ["<rootDir>"],
   "testPathIgnorePatterns": ["/node_modules/", "/dist/"],

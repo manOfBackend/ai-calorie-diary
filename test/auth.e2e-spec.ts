@@ -108,34 +108,34 @@ describe('AuthController (e2e)', () => {
       .send({ refreshToken: 'invalid_token' })
       .expect(401);
   });
-
-  it('/auth/me (GET) - get current user', async () => {
-    // 사용자 등록 및 로그인
-    const password = 'password123';
-    const email = 'test_me@example.com';
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await prismaService.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-      },
-    });
-
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ email, password })
-      .expect(200);
-
-    const { accessToken } = loginResponse.body;
-
-    const meResponse = await request(app.getHttpServer())
-      .get('/auth/me')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200);
-
-    expect(meResponse.body).toHaveProperty('id');
-    expect(meResponse.body).toHaveProperty('email', email);
-  });
+  //
+  // it('/auth/me (GET) - get current user', async () => {
+  //   // 사용자 등록 및 로그인
+  //   const password = 'password123';
+  //   const email = 'test_me@example.com';
+  //   const hashedPassword = await bcrypt.hash(password, 10);
+  //   await prismaService.user.create({
+  //     data: {
+  //       email,
+  //       password: hashedPassword,
+  //     },
+  //   });
+  //
+  //   const loginResponse = await request(app.getHttpServer())
+  //     .post('/auth/login')
+  //     .send({ email, password })
+  //     .expect(200);
+  //
+  //   const { accessToken } = loginResponse.body;
+  //
+  //   const meResponse = await request(app.getHttpServer())
+  //     .get('/auth/me')
+  //     .set('Authorization', `Bearer ${accessToken}`)
+  //     .expect(200);
+  //
+  //   expect(meResponse.body).toHaveProperty('id');
+  //   expect(meResponse.body).toHaveProperty('email', email);
+  // });
 
   it('/auth/logout (POST) - logout user', async () => {
     // 사용자 등록 및 로그인

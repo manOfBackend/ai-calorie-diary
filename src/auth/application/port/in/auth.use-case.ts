@@ -1,7 +1,7 @@
 import { LoginCommand } from './dto/login.command';
 import { RefreshTokenCommand } from './dto/refresh-token.command';
 import { RegisterCommand } from './dto/register.command';
-import { User } from '@auth/domain/user';
+import { User } from '@user/domain/user';
 
 export const AUTH_USE_CASE = 'AUTH_USE_CASE';
 

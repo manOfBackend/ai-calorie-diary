@@ -6,13 +6,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { JwtStrategy } from '@common/strategies/jwt.strategy';
 import { AuthController } from '@auth/adapter/in/rest/auth.controller';
-import { USER_REPOSITORY_PORT } from '@auth/application/port/out/user-repository.port';
-import { UserRepositoryAdapter } from '@auth/adapter/out/persistence/user-repository.adapter';
 import { AUTH_USE_CASE } from '@auth/application/port/in/auth.use-case';
 import { AuthService } from '@auth/application/service/auth.service';
+import { UserModule } from '@user/user.module';
 
 @Module({
   imports: [
+    UserModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -27,10 +27,6 @@ import { AuthService } from '@auth/application/service/auth.service';
   controllers: [AuthController],
   providers: [
     PrismaService,
-    {
-      provide: USER_REPOSITORY_PORT,
-      useClass: UserRepositoryAdapter,
-    },
     {
       provide: AUTH_USE_CASE,
       useClass: AuthService,
