@@ -59,6 +59,9 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
       updatedDiary.userId,
       updatedDiary.createdAt,
       updatedDiary.updatedAt,
+      [],
+      0,
+      {},
     );
   }
 

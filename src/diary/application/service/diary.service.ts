@@ -37,6 +37,9 @@ export class DiaryService implements DiaryUseCase {
       userId,
       new Date(),
       new Date(),
+      [],
+      0,
+      {},
     );
     return this.diaryRepository.createDiary(diary);
   }

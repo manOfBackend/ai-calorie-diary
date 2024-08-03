@@ -18,13 +18,16 @@ model User {
 }
 
 model Diary {
-  id        String   @id @default(uuid())
-  content   String
-  imageUrl  String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(uuid())
+  content          String
+  imageUrl         String?
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients      String[]
+  totalCalories    Float?
+  calorieBreakdown Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model RefreshToken {
