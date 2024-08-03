@@ -74,9 +74,20 @@ describe('FoodService', () => {
       const mockUserId = 'user123';
       const mockImageUrl = 'https://example.com/image.jpg';
       const mockFoodAnalysis: FoodAnalysis = {
-        ingredients: ['ingredient1', 'ingredient2'],
+        ingredients: ['chicken', 'rice'],
         totalCalories: 500,
-        breakdown: { ingredient1: 250, ingredient2: 250 },
+        breakdown: {
+          chicken: {
+            protein: { amount: 25, unit: 'g', calories: 100 },
+            fat: { amount: 3, unit: 'g', calories: 27 },
+            carbohydrate: { amount: 0, unit: 'g', calories: 0 },
+          },
+          rice: {
+            protein: { amount: 4, unit: 'g', calories: 16 },
+            fat: { amount: 0.5, unit: 'g', calories: 4.5 },
+            carbohydrate: { amount: 45, unit: 'g', calories: 180 },
+          },
+        },
       };
 
       s3Service.uploadFile.mockResolvedValue(mockImageUrl);
@@ -125,7 +136,6 @@ describe('FoodService', () => {
         throw new Error('Compression failed');
       });
 
-      // Act & Assert
       await expect(
         service.analyzeFoodImage(mockFile, 'description', 'user123'),
       ).rejects.toThrow('Compression failed');

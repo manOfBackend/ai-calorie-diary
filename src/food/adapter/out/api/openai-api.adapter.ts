@@ -25,21 +25,26 @@ export class OpenAIApiAdapter implements OpenAIApiPort {
       messages: [
         {
           role: 'system',
-          content: `You are a food analysis AI. Analyze the food image and description, then provide a JSON response with the following structure:
+          content: `당신은 음식 분석 AI입니다. 음식 이미지와 설명을 분석하고, 다음 구조의 JSON 응답을 한글로 제공하세요:
           {
             "ingredients": string[],
             "totalCalories": number,
             "breakdown": {
-              [ingredient: string]: number
+              [ingredient: string]: {
+                protein: { amount: number, unit: "g", calories: number },
+                fat: { amount: number, unit: "g", calories: number },
+                carbohydrate: { amount: number, unit: "g", calories: number }
+              }
             }
-          }`,
+          }
+          Always use grams (g) as the unit for amount.`,
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Analyze this food image and the given description: ${description}. Provide ingredients, total calories, and calorie breakdown.`,
+              text: `Analyze this food image and the given description: ${description}. Provide ingredients, total calories, and detailed nutritional breakdown.`,
             },
             {
               type: 'image_url',
@@ -52,7 +57,7 @@ export class OpenAIApiAdapter implements OpenAIApiPort {
           ],
         },
       ],
-      max_tokens: 500,
+      max_tokens: 1000,
       response_format: { type: 'json_object' },
     });
 

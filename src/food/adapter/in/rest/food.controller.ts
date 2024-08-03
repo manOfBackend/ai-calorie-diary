@@ -1,15 +1,15 @@
 import {
-  Controller,
-  Post,
-  Body,
-  Request,
-  UploadedFile,
-  UseInterceptors,
-  Inject,
-  UseGuards,
-  ParseFilePipe,
-  MaxFileSizeValidator,
   BadRequestException,
+  Body,
+  Controller,
+  FileTypeValidator,
+  Inject,
+  MaxFileSizeValidator,
+  ParseFilePipe,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -17,9 +17,10 @@ import {
   FoodUseCase,
 } from '@food/application/port/in/food.use-case';
 import { FoodAnalysisDto } from './dto/food-analysis.dto';
-import { ApiTags, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import { SwaggerFood, SwaggerAnalyzeFoodImage } from './swagger.decorator';
+import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
+import { SwaggerAnalyzeFoodImage, SwaggerFood } from './swagger.decorator';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { User } from '@common/decorators/user.decorator';
 
 @ApiTags('food')
 @UseGuards(JwtAuthGuard)
@@ -48,19 +49,23 @@ export class FoodController {
             maxSize: 3 * 1024 * 1024,
             message: '파일 크기는 3MB를 초과할 수 없습니다.',
           }),
+          new FileTypeValidator({
+            fileType: /(jpg|jpeg|png)$/,
+          }),
         ],
+        fileIsRequired: true,
         exceptionFactory: (error) => {
           throw new BadRequestException(error);
         },
       }),
     )
     file: Express.Multer.File,
-    @Request() req,
+    @User('id') userId: string,
   ) {
     return this.foodUseCase.analyzeFoodImage(
       file,
       foodAnalysisDto.description,
-      req.user.id,
+      userId,
     );
   }
 }

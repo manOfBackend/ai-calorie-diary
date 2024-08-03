@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FoodAnalysisDto {
@@ -6,9 +6,9 @@ export class FoodAnalysisDto {
     type: 'string',
     format: 'binary',
     description: '분석할 음식 이미지 파일',
+    required: true,
   })
-  @IsOptional()
-  image?: Express.Multer.File;
+  image: any; // Express.Multer.File
 
   @ApiProperty({
     type: 'string',
