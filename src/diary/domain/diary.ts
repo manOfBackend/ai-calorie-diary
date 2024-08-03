@@ -1,3 +1,5 @@
+import { FoodBreakdown } from '@common/dto/Ingredient.dto';
+
 export class Diary {
   constructor(
     public id: string,
@@ -8,6 +10,6 @@ export class Diary {
     public updatedAt: Date,
     public ingredients?: string[],
     public totalCalories?: number,
-    public calorieBreakdown?: { [ingredient: string]: number },
+    public calorieBreakdown?: FoodBreakdown,
   ) {}
 }

@@ -1,6 +1,6 @@
 import { Diary } from '@diary/domain/diary';
 
-export const DIARY_REPOSITORY_PORT = 'DIARY_REPOSITORY_PORT';
+export const DIARY_REPOSITORY_PORT = Symbol('DIARY_REPOSITORY_PORT');
 
 export interface DiaryRepositoryPort {
   createDiary(diary: Diary): Promise<Diary>;

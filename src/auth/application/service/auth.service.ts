@@ -29,6 +29,7 @@ export class AuthService implements AuthUseCase {
     command: LoginCommand,
   ): Promise<{ accessToken: string; refreshToken: string; user: User }> {
     const user = await this.userRepository.findByEmail(command.email);
+
     if (!user || !(await bcrypt.compare(command.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
