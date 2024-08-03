@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -11,12 +12,16 @@ import { LoginCommand } from '@auth/application/port/in/dto/login.command';
 import { User } from '@user/domain/user';
 import { RefreshTokenCommand } from '@auth/application/port/in/dto/refresh-token.command';
 import { RegisterCommand } from '@auth/application/port/in/dto/register.command';
-import { UserService } from '@user/application/service/user.service';
+import {
+  USER_USE_CASE,
+  UserUseCase,
+} from '@user/application/port/in/user.use-case';
 
 @Injectable()
 export class AuthService implements AuthUseCase {
   constructor(
-    private readonly userService: UserService,
+    @Inject(USER_USE_CASE)
+    private readonly userService: UserUseCase,
     private readonly jwtService: JwtService,
   ) {}
 

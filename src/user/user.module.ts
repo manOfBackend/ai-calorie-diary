@@ -12,7 +12,6 @@ import { USER_USE_CASE } from '@user/application/port/in/user.use-case';
   imports: [PrismaModule],
   controllers: [UserController],
   providers: [
-    UserService,
     {
       provide: USER_USE_CASE,
       useClass: UserService,
@@ -22,6 +21,6 @@ import { USER_USE_CASE } from '@user/application/port/in/user.use-case';
       useClass: UserRepositoryAdapter,
     },
   ],
-  exports: [UserService, USER_REPOSITORY_PORT],
+  exports: [USER_USE_CASE, USER_REPOSITORY_PORT],
 })
 export class UserModule {}
