@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@auth/auth.module';
 import { PrismaModule } from '@common/prisma/prisma.module';
-import { ClaudeModule } from '@claude/claude.module';
 import { DiaryModule } from '@diary/diary.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { FoodModule } from '@food/food.module';
@@ -36,7 +35,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       isGlobal: true,
     }),
     PrismaModule,
-    ClaudeModule,
     AuthModule,
     DiaryModule,
     FoodModule,
