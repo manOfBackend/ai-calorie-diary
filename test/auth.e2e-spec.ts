@@ -47,19 +47,17 @@ describe('AuthController (e2e)', () => {
     expect(response.body).toHaveProperty('refreshToken');
   });
 
-  it.only('/auth/login (POST) - successful login', async () => {
+  it('/auth/login (POST) - successful login', async () => {
     const password = 'password123';
     const email = 'test_login@example.com';
     await prismaService.$transaction(async (prisma) => {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const a = await prisma.user.create({
+      await prisma.user.create({
         data: {
           email,
           password: hashedPassword,
         },
       });
-
-      console.log(a, email, password, hashedPassword);
     });
 
     const response = await request(app.getHttpServer())
