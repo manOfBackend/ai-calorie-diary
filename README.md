@@ -2,152 +2,141 @@
   <img width="571" alt="image" src="https://github.com/manOfBackend/ai-calorie-diary/assets/74768098/4dd1a702-7e64-488d-900f-b490f2684564">
 </p>
 
-## 개요
-이 프로젝트는 사용자가 음식 사진을 촬영하고 다이어리를 작성하면 AI를 통해 각 음식의 칼로리를 계산하여 식단 관리를 해주는 어플의 백엔드 시스템입니다.
-[만들면서 배우는 클린 아키텍처 : 자바 코드로 구현하는 클린 웹 애플리케이션] 책을 학습하며 공부 목적으로 만들고 있습니다.
-NestJS와 Effect-ts를 사용하여 구축되었으며, 클린 아키텍처와 도메인 주도 설계(Domain-Driven Design, DDD) 원칙을 따릅니다.
+## Overview
+This project is the backend system of an application that allows users to take photos of food and keep a diary. The AI calculates the calories of each food item to help users manage their diet. This project is being created for learning purposes while studying the book [Clean Architecture: A Craftsman's Guide to Software Structure and Design] by Robert C. Martin, and it is built using NestJS, adhering to clean architecture and Domain-Driven Design (DDD) principles.
 
-### 클린 아키텍처
+## Architecture
 
-이 프로젝트는 클린 아키텍처와 도메인 주도 설계 원칙을 따르고 있습니다. 주요 특징은 다음과 같습니다:
+This project follows clean architecture principles and is designed as a microservices architecture. The system is composed of loosely coupled modules that communicate via events, promoting scalability and maintainability. Key architectural features include:
 
-- **계층화된 아키텍처**: 프로젝트는 크게 어댑터, 애플리케이션, 도메인 계층으로 나누어져 있습니다.
-    - **어댑터 계층**: 외부와의 인터페이스를 담당하며, REST API 컨트롤러와 데이터베이스 접근을 위한 어댑터가 위치합니다.
-    - **애플리케이션 계층**: 비즈니스 로직을 처리하는 서비스와 포트가 위치합니다.
-    - **도메인 계층**: 핵심 도메인 로직과 엔티티가 위치합니다.
-- **의존성 역전**: 포트와 어댑터 패턴을 사용하여 상위 계층이 하위 계층에 의존하지 않도록 합니다.
+- **Hexagonal Architecture**: Each module is structured using the hexagonal (ports and adapters) pattern, separating core business logic from external concerns.
+- **Event-Driven Communication**: Modules communicate asynchronously through events, using an in-memory event bus for local communication and Kafka for distributed event processing.
+- **Microservices**: The application is divided into distinct services (auth, user, food, diary) that can be deployed and scaled independently.
+- **Domain-Driven Design (DDD)**: Business logic is organized around domain concepts, with clear boundaries between different contexts.
 
-### 인프라 구성
+## Project Structure
 
-- **PostgreSQL**: Prisma ORM을 통해 데이터베이스로 사용됩니다.
-- **Redis**: 자주 조회되는 데이터를 캐시하여 성능을 향상시킵니다.
-- **RabbitMQ**: 비동기 작업 처리를 위한 메시지 큐로 사용됩니다.
 
-## 프로젝트 구조
 ```
-root
-│
-├── docker-compose.yml
-├── package.json
-├── prisma/
-│   └── (Prisma ORM 설정 및 스키마 파일)
-├── README.md
-├── src/
-│   ├── main.ts
-│   ├── app.module.ts
-│   ├── auth/ (인증 모듈)
-│   │   ├── adapter/
+src/
+├── main.ts
+├── app.module.ts
+├── auth/
+│   ├── adapter/
+│   │   ├── in/
+│   │   │   └── rest/
+│   │   │       ├── dto/
+│   │   │       ├── auth.controller.spec.ts
+│   │   │       └── auth.controller.ts
+│   │   └── out/
+│   │       └── persistence/
+│   │           └── user-repository.adapter.ts
+│   ├── application/
+│   │   ├── port/
 │   │   │   ├── in/
-│   │   │   │   └── rest/
-│   │   │   │       ├── auth.controller.ts
-│   │   │   │       ├── auth.controller.spec.ts
-│   │   │   │       └── dto/
-│   │   │   │           ├── login.dto.ts
-│   │   │   │           ├── register.dto.ts
-│   │   │   │           └── refresh-token.dto.ts
+│   │   │   │   ├── dto/
+│   │   │   │   └── auth.use-case.ts
 │   │   │   └── out/
-│   │   │       └── persistence/
-│   │   │           └── user-repository.adapter.ts
-│   │   ├── application/
-│   │   │   ├── service/
-│   │   │   │   ├── auth.service.ts
-│   │   │   │   └── auth.service.spec.ts
-│   │   │   └── port/
-│   │   │       ├── in/
-│   │   │       │   ├── auth.use-case.ts
-│   │   │       │   └── dto/
-│   │   │       │       ├── login.command.ts
-│   │   │       │       ├── register.command.ts
-│   │   │       │       └── refresh-token.command.ts
-│   │   │       └── out/
-│   │   │           └── user-repository.port.ts
-│   │   └── domain/
-│   │       ├── refresh-token.ts
-│   │       └── user.ts
-│   ├── common/ (공통 모듈)
-│   │   ├── prisma/
-│   │   │   ├── prisma.service.ts
-│   │   │   └── prisma.module.ts
-│   │   ├── guards/
-│   │   │   └── jwt-auth.guard.ts
-│   │   └── cache/ (캐시 모듈 - Redis)
-│   │       ├── redis.service.ts
-│   │       └── redis.module.ts
-│   ├── messaging/ (메시징 모듈 - RabbitMQ)
-│   │   ├── rabbitmq.service.ts
-│   │   └── rabbitmq.module.ts
-│   ├── user/ (사용자 관리 모듈)
-│   │   ├── adapter/
+│   │   │       └── user-repository.port.ts
+│   │   └── service/
+│   │       ├── auth.service.spec.ts
+│   │       └── auth.service.ts
+│   ├── domain/
+│   │   ├── refresh-token.ts
+│   │   └── user.ts
+│   └── auth.module.ts
+├── common/
+│   ├── decorators/
+│   │   └── user.decorator.ts
+│   ├── dto/
+│   ├── events/
+│   │   ├── event.interface.ts
+│   │   ├── event-publisher.interface.ts
+│   │   ├── event-subscriber.interface.ts
+│   │   └── in-memory-event-bus.ts
+│   ├── filters/
+│   │   └── all-exceptions.filter.ts
+│   ├── guards/
+│   │   └── jwt-auth.guard.ts
+│   ├── kafka/
+│   ├── logger/
+│   │   └── custom-logger.service.ts
+│   ├── prisma/
+│   │   ├── prisma.module.ts
+│   │   └── prisma.service.ts
+│   ├── s3/
+│   │   └── s3.service.ts
+│   └── strategies/
+│       └── jwt.strategy.ts
+├── diary/
+│   ├── adapter/
+│   │   ├── in/
+│   │   │   └── rest/
+│   │   │       ├── dto/
+│   │   │       ├── diary.controller.ts
+│   │   │       └── swagger.decorator.ts
+│   │   └── out/
+│   │       └── persistence/
+│   │           └── diary-repository.adapter.ts
+│   ├── application/
+│   │   ├── event-handlers/
+│   │   │   └── food-analyzed.handler.ts
+│   │   ├── port/
 │   │   │   ├── in/
-│   │   │   │   └── rest/
-│   │   │   │       ├── user.controller.ts
-│   │   │   │       └── dto/
-│   │   │   │           └── create-user.dto.ts
+│   │   │   │   └── diary.use-case.ts
 │   │   │   └── out/
-│   │   │       └── persistence/
-│   │   │           └── user-repository.adapter.ts
-│   │   ├── application/
-│   │   │   ├── service/
-│   │   │   │   └── user.service.ts
-│   │   │   └── port/
-│   │   │       ├── in/
-│   │   │       │   └── user.use-case.ts
-│   │   │       └── out/
-│   │   │           └── user-repository.port.ts
-│   │   └── domain/
-│   │       └── user.ts
-│   ├── food/ (음식 인식 및 칼로리 계산 모듈)
-│   │   ├── adapter/
+│   │   │       └── diary-repository.port.ts
+│   │   └── service/
+│   │       ├── diary.service.spec.ts
+│   │       └── diary.service.ts
+│   ├── domain/
+│   │   └── diary.ts
+│   └── diary.module.ts
+├── food/
+│   ├── adapter/
+│   │   ├── in/
+│   │   │   └── rest/
+│   │   │       ├── dto/
+│   │   │       │   └── food-analysis.dto.ts
+│   │   │       ├── food.controller.ts
+│   │   │       └── swagger.decorator.ts
+│   │   └── out/
+│   │       └── api/
+│   │           └── openai-api.adapter.ts
+│   ├── application/
+│   │   ├── port/
 │   │   │   ├── in/
-│   │   │   │   └── rest/
-│   │   │   │       ├── food.controller.ts
-│   │   │   │       └── dto/
-│   │   │   │           ├── food-image.dto.ts
-│   │   │   │           ├── food-info.dto.ts
-│   │   │   │           └── food-diary.dto.ts
+│   │   │   │   └── food.use-case.ts
 │   │   │   └── out/
-│   │   │       ├── persistence/
-│   │   │       │   └── food-repository.adapter.ts
-│   │   │       └── api/
-│   │   │           └── gpt-api.adapter.ts
-│   │   ├── application/
-│   │   │   ├── service/
-│   │   │   │   └── food.service.ts
-│   │   │   └── port/
-│   │   │       ├── in/
-│   │   │       │   └── food.use-case.ts
-│   │   │       └── out/
-│   │   │           ├── food-repository.port.ts
-│   │   │           └── gpt-api.port.ts
-│   │   └── domain/
-│   │       ├── food-image.ts
-│   │       ├── food-info.ts
-│   │       └── food-diary.ts
-│   ├── diary/ (다이어리 모듈)
-│   │   ├── adapter/
-│   │   │   ├── in/
-│   │   │   │   └── rest/
-│   │   │   │       ├── diary.controller.ts
-│   │   │   │       └── dto/
-│   │   │   │           └── create-diary-entry.dto.ts
-│   │   │   └── out/
-│   │   │       └── persistence/
-│   │   │           └── diary-repository.adapter.ts
-│   │   ├── application/
-│   │   │   ├── service/
-│   │   │   │   └── diary.service.ts
-│   │   │   └── port/
-│   │   │       ├── in/
-│   │   │       │   └── diary.use-case.ts
-│   │   │       └── out/
-│   │   │           └── diary-repository.port.ts
-│   │   └── domain/
-│   │       └── diary-entry.ts
-├── test/
-│   └── (테스트 코드)
-├── tsconfig.build.json
-└── tsconfig.json
-
+│   │   │       └── openai-api.port.ts
+│   │   └── service/
+│   │       └── food.service.ts
+│   ├── domain/
+│   │   ├── events/
+│   │   │   └── food-analyzed.event.ts
+│   │   └── food-analysis.ts
+│   └── food.module.ts
+└── user/
+    ├── adapter/
+    │   ├── in/
+    │   │   └── rest/
+    │   │       ├── dto/
+    │   │       └── user.controller.ts
+    │   └── out/
+    │       └── persistence/
+    │           └── user-repository.adapter.ts
+    ├── application/
+    │   ├── port/
+    │   │   ├── in/
+    │   │   │   └── user.use-case.ts
+    │   │   └── out/
+    │   │       └── user-repository.port.ts
+    │   └── service/
+    │       └── user.service.ts
+    ├── domain/
+    │   └── user.ts
+    └── user.module.ts
+   
 ```
 
 ## Installation
