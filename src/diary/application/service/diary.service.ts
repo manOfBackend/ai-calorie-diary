@@ -97,7 +97,9 @@ export class DiaryService implements DiaryUseCase {
       );
     }
 
-    await this.s3Service.deleteFile(existingDiary.imageUrl);
+    if (existingDiary.imageUrl) {
+      await this.s3Service.deleteFile(existingDiary.imageUrl);
+    }
     await this.diaryRepository.deleteDiary(id);
   }
 }

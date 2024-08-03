@@ -16,7 +16,8 @@
       "@claude/*": ["./src/claude/*"],
       "@auth/*": ["./src/auth/*"],
       "@diary/*": ["./src/diary/*"],
-      "@food/*": ["./src/food/*"]
+      "@food/*": ["./src/food/*"],
+      "@user/*": ["./src/user/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

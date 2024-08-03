@@ -79,6 +79,7 @@ export class AuthController {
         user: { id: user.id, email: user.email },
       };
     } catch (error) {
+      console.log(error, loginDto);
       throw new UnauthorizedException('Invalid credentials');
     }
   }

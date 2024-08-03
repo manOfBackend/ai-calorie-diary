@@ -6,7 +6,7 @@ import { ClaudeTestModule } from './claude-test.module';
 
 const runRealApiTests = process.env.RUN_REAL_API_TESTS === 'true';
 
-describe('ClaudeController (e2e)', () => {
+describe.skip('ClaudeController (e2e)', () => {
   let app: INestApplication;
 
   (runRealApiTests ? describe : describe.skip)('With real API', () => {

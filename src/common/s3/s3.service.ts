@@ -39,13 +39,14 @@ export class S3Service {
   }
 
   async deleteFile(fileUrl: string): Promise<void> {
+    if (!fileUrl) {
+      return;
+    }
     const key = this.getKeyFromUrl(fileUrl);
-
     const command = new DeleteObjectCommand({
       Bucket: this.bucketName,
       Key: key,
     });
-
     await this.s3Client.send(command);
   }
 
