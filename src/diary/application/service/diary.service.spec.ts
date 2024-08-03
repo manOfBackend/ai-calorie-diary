@@ -1,264 +1,258 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DiaryService } from './diary.service';
-import {
-  DIARY_REPOSITORY_PORT,
-  DiaryRepositoryPort,
-} from '../port/out/diary-repository.port';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { PrismaService } from '@common/prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import { v4 as uuidv4 } from 'uuid';
 import { S3Service } from '@common/s3/s3.service';
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { Diary } from '@diary/domain/diary';
+import { AppModule } from '../../../app.module';
 
-describe('DiaryService', () => {
-  let service: DiaryService;
-  let mockDiaryRepository: jest.Mocked<DiaryRepositoryPort>;
-  let mockS3Service: jest.Mocked<S3Service>;
+jest.setTimeout(300000);
+jest.mock('@common/s3/s3.service');
+
+describe('DiaryController (e2e)', () => {
+  let app: INestApplication;
+  let prismaService: PrismaService;
+  let jwtService: JwtService;
+  let s3Service: jest.Mocked<S3Service>;
+  let authToken: string;
+  let userId: string;
+  let userEmail: string;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      .overrideProvider(S3Service)
+      .useValue({
+        uploadFile: jest.fn(),
+        deleteFile: jest.fn(),
+      })
+      .compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+
+    prismaService = app.get(PrismaService);
+    jwtService = app.get(JwtService);
+    s3Service = app.get(S3Service);
+  });
 
   beforeEach(async () => {
-    mockDiaryRepository = {
-      createDiary: jest.fn(),
-      findDiaryById: jest.fn(),
-      findDiariesByUserId: jest.fn(),
-      updateDiary: jest.fn(),
-      deleteDiary: jest.fn(),
-    };
+    await prismaService.$transaction(async (prisma) => {
+      await prisma.diary.deleteMany();
+      await prisma.user.deleteMany();
 
-    mockS3Service = {
-      uploadFile: jest.fn(),
-      deleteFile: jest.fn(),
-    } as unknown as jest.Mocked<S3Service>;
+      userEmail = `test_diary_${uuidv4()}@example.com`;
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DiaryService,
-        {
-          provide: DIARY_REPOSITORY_PORT,
-          useValue: mockDiaryRepository,
+      const user = await prisma.user.create({
+        data: {
+          email: userEmail,
+          password: 'hashedpassword',
         },
-        {
-          provide: S3Service,
-          useValue: mockS3Service,
+      });
+      userId = user.id;
+
+      authToken = jwtService.sign({ sub: user.id, email: user.email });
+    });
+
+    // Reset S3Service mock
+    jest.resetAllMocks();
+  });
+
+  afterEach(async () => {
+    await prismaService.$transaction(async (prisma) => {
+      await prisma.diary.deleteMany();
+      await prisma.user.deleteMany();
+    });
+  });
+
+  afterAll(async () => {
+    await prismaService.$disconnect();
+    await app.close();
+  });
+
+  describe('/diary (POST)', () => {
+    it('should create a new diary entry without image', () => {
+      return request(app.getHttpServer())
+        .post('/diary')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          content: 'Test diary content',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('id');
+          expect(res.body.content).toBe('Test diary content');
+          expect(res.body.userId).toBe(userId);
+        });
+    });
+
+    it('should handle file upload', () => {
+      const filePath = path.join(__dirname, 'assets', 'icon.png');
+      const fileBuffer = fs.readFileSync(filePath);
+      const mockImageUrl = 'https://example.com/test-image.png';
+
+      s3Service.uploadFile.mockResolvedValue(mockImageUrl);
+
+      return request(app.getHttpServer())
+        .post('/diary')
+        .set('Authorization', `Bearer ${authToken}`)
+        .attach('image', fileBuffer, 'icon.png')
+        .field('content', 'Test diary content with image')
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('imageUrl', mockImageUrl);
+          expect(res.body.content).toBe('Test diary content with image');
+          expect(s3Service.uploadFile).toHaveBeenCalled();
+        });
+    });
+  });
+
+  describe('/diary (GET)', () => {
+    it('should get all diaries for the user', async () => {
+      await prismaService.diary.create({
+        data: {
+          content: 'Test diary content',
+          userId: userId,
         },
-      ],
-    }).compile();
+      });
 
-    service = module.get<DiaryService>(DiaryService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  describe('createDiary', () => {
-    it('should create a diary with image', async () => {
-      const content = 'Test content';
-      const imageFile = { buffer: Buffer.from('test') } as Express.Multer.File;
-      const userId = '1';
-      const imageUrl = 'http://test-image-url.com';
-      const createdDiary = new Diary(
-        '1',
-        content,
-        imageUrl,
-        userId,
-        new Date(),
-        new Date(),
-      );
-
-      mockS3Service.uploadFile.mockResolvedValue(imageUrl);
-      mockDiaryRepository.createDiary.mockResolvedValue(createdDiary);
-
-      const result = await service.createDiary(content, imageFile, userId);
-
-      expect(mockS3Service.uploadFile).toHaveBeenCalledWith(imageFile);
-      expect(mockDiaryRepository.createDiary).toHaveBeenCalledWith(
-        expect.any(Diary),
-      );
-      expect(result).toEqual(createdDiary);
-    });
-
-    it('should create a diary without image', async () => {
-      const content = 'Test content';
-      const userId = '1';
-      const createdDiary = new Diary(
-        '1',
-        content,
-        null,
-        userId,
-        new Date(),
-        new Date(),
-      );
-
-      mockDiaryRepository.createDiary.mockResolvedValue(createdDiary);
-
-      const result = await service.createDiary(content, undefined, userId);
-
-      expect(mockS3Service.uploadFile).not.toHaveBeenCalled();
-      expect(mockDiaryRepository.createDiary).toHaveBeenCalledWith(
-        expect.any(Diary),
-      );
-      expect(result).toEqual(createdDiary);
+      return request(app.getHttpServer())
+        .get('/diary')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+        .expect((res) => {
+          expect(Array.isArray(res.body)).toBe(true);
+          expect(res.body.length).toBeGreaterThan(0);
+          expect(res.body[0]).toHaveProperty('id');
+          expect(res.body[0]).toHaveProperty('content');
+          expect(res.body[0].userId).toBe(userId);
+        });
     });
   });
 
-  describe('updateDiary', () => {
-    it('should update a diary with new image', async () => {
-      const id = '1';
-      const content = 'Updated content';
-      const imageFile = {
-        buffer: Buffer.from('new image'),
-      } as Express.Multer.File;
-      const userId = '1';
-      const newImageUrl = 'http://new-image-url.com';
-      const updatedDiary = new Diary(
-        id,
-        content,
-        newImageUrl,
-        userId,
-        new Date(),
-        new Date(),
-      );
+  describe('/diary/:id (GET)', () => {
+    it('should get a specific diary entry', async () => {
+      const diary = await prismaService.diary.create({
+        data: {
+          content: 'Specific diary content',
+          userId: userId,
+        },
+      });
 
-      mockDiaryRepository.findDiaryById.mockResolvedValue(
-        new Diary(
-          id,
-          'Old content',
-          'http://old-image-url.com',
-          userId,
-          new Date(),
-          new Date(),
-        ),
-      );
-      mockS3Service.uploadFile.mockResolvedValue(newImageUrl);
-      mockDiaryRepository.updateDiary.mockResolvedValue(updatedDiary);
-
-      const result = await service.updateDiary(id, content, imageFile, userId);
-
-      expect(mockS3Service.uploadFile).toHaveBeenCalledWith(imageFile);
-      expect(mockDiaryRepository.updateDiary).toHaveBeenCalledWith(
-        id,
-        expect.objectContaining({ content, imageUrl: newImageUrl }),
-      );
-      expect(result).toEqual(updatedDiary);
+      return request(app.getHttpServer())
+        .get(`/diary/${diary.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.id).toBe(diary.id);
+          expect(res.body.content).toBe('Specific diary content');
+          expect(res.body.userId).toBe(userId);
+        });
     });
 
-    it('should throw UnauthorizedException when user is not the owner', async () => {
-      const id = '1';
-      const content = 'Updated content';
-      const userId = '2';
-
-      mockDiaryRepository.findDiaryById.mockResolvedValue(
-        new Diary(id, 'Old content', null, '1', new Date(), new Date()),
-      );
-
-      await expect(
-        service.updateDiary(id, content, undefined, userId),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should throw NotFoundException when diary does not exist', async () => {
-      const id = '1';
-      const content = 'Updated content';
-      const userId = '1';
-
-      mockDiaryRepository.findDiaryById.mockResolvedValue(null);
-
-      await expect(
-        service.updateDiary(id, content, undefined, userId),
-      ).rejects.toThrow(NotFoundException);
+    it('should return 404 for non-existent diary', () => {
+      return request(app.getHttpServer())
+        .get(`/diary/${uuidv4()}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
     });
   });
 
-  describe('deleteDiary', () => {
-    it('should delete a diary', async () => {
-      const id = '1';
-      const userId = '1';
-      const diaryToDelete = new Diary(
-        id,
-        'Content',
-        'http://image-url.com',
-        userId,
-        new Date(),
-        new Date(),
-      );
+  describe('/diary/:id (PUT)', () => {
+    it('should update a diary entry', async () => {
+      const diary = await prismaService.diary.create({
+        data: {
+          content: 'Original content',
+          userId: userId,
+        },
+      });
 
-      mockDiaryRepository.findDiaryById.mockResolvedValue(diaryToDelete);
-      mockDiaryRepository.deleteDiary.mockResolvedValue();
-      mockS3Service.deleteFile.mockResolvedValue();
-
-      await service.deleteDiary(id, userId);
-
-      expect(mockDiaryRepository.deleteDiary).toHaveBeenCalledWith(id);
-      expect(mockS3Service.deleteFile).toHaveBeenCalledWith(
-        'http://image-url.com',
-      );
+      return request(app.getHttpServer())
+        .put(`/diary/${diary.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          content: 'Updated content',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.id).toBe(diary.id);
+          expect(res.body.content).toBe('Updated content');
+        });
     });
 
-    it('should throw UnauthorizedException when user is not the owner', async () => {
-      const id = '1';
-      const userId = '2';
+    it('should update a diary entry with new image', async () => {
+      const diary = await prismaService.diary.create({
+        data: {
+          content: 'Original content',
+          userId: userId,
+          imageUrl: 'https://example.com/old-image.png',
+        },
+      });
 
-      mockDiaryRepository.findDiaryById.mockResolvedValue(
-        new Diary(id, 'Content', null, '1', new Date(), new Date()),
-      );
+      const filePath = path.join(__dirname, 'assets', 'icon.png');
+      const fileBuffer = fs.readFileSync(filePath);
+      const mockNewImageUrl = 'https://example.com/new-image.png';
 
-      await expect(service.deleteDiary(id, userId)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      s3Service.uploadFile.mockResolvedValue(mockNewImageUrl);
+
+      return request(app.getHttpServer())
+        .put(`/diary/${diary.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .attach('image', fileBuffer, 'new-icon.png')
+        .field('content', 'Updated content with new image')
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.id).toBe(diary.id);
+          expect(res.body.content).toBe('Updated content with new image');
+          expect(res.body.imageUrl).toBe(mockNewImageUrl);
+          expect(s3Service.uploadFile).toHaveBeenCalled();
+        });
     });
 
-    it('should throw NotFoundException when diary does not exist', async () => {
-      const id = '1';
-      const userId = '1';
-
-      mockDiaryRepository.findDiaryById.mockResolvedValue(null);
-
-      await expect(service.deleteDiary(id, userId)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
-  describe('getDiaryById', () => {
-    it('should return a diary by id', async () => {
-      const id = '1';
-      const userId = '1';
-      const diary = new Diary(
-        id,
-        'Content',
-        null,
-        userId,
-        new Date(),
-        new Date(),
-      );
-
-      mockDiaryRepository.findDiaryById.mockResolvedValue(diary);
-
-      const result = await service.getDiaryById(id);
-
-      expect(result).toEqual(diary);
-    });
-
-    it('should throw NotFoundException when diary does not exist', async () => {
-      const id = '1';
-
-      mockDiaryRepository.findDiaryById.mockResolvedValue(null);
-
-      await expect(service.getDiaryById(id)).rejects.toThrow(NotFoundException);
+    it('should return 404 for updating non-existent diary', () => {
+      return request(app.getHttpServer())
+        .put(`/diary/${uuidv4()}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          content: 'Updated content',
+        })
+        .expect(404);
     });
   });
 
-  describe('getDiariesByUserId', () => {
-    it('should return diaries for a user', async () => {
-      const userId = '1';
-      const diaries = [
-        new Diary('1', 'Content 1', null, userId, new Date(), new Date()),
-        new Diary('2', 'Content 2', null, userId, new Date(), new Date()),
-      ];
+  describe('/diary/:id (DELETE)', () => {
+    it('should delete a diary entry', async () => {
+      const diary = await prismaService.diary.create({
+        data: {
+          content: 'Content to be deleted',
+          userId: userId,
+          imageUrl: 'https://example.com/image-to-delete.png',
+        },
+      });
 
-      mockDiaryRepository.findDiariesByUserId.mockResolvedValue(diaries);
+      s3Service.deleteFile.mockResolvedValue(undefined);
 
-      const result = await service.getDiariesByUserId(userId);
+      await request(app.getHttpServer())
+        .delete(`/diary/${diary.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
 
-      expect(result).toEqual(diaries);
+      const deletedDiary = await prismaService.diary.findUnique({
+        where: { id: diary.id },
+      });
+      expect(deletedDiary).toBeNull();
+      expect(s3Service.deleteFile).toHaveBeenCalledWith(diary.imageUrl);
+    });
+
+    it('should return 404 for deleting non-existent diary', () => {
+      return request(app.getHttpServer())
+        .delete(`/diary/${uuidv4()}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
     });
   });
 });
