@@ -165,7 +165,7 @@ describe('DiaryService', () => {
 
       mockDiaryRepository.findDiaryById.mockResolvedValue(diary);
 
-      const result = await service.getDiaryById(id);
+      const result = await service.getDiaryById(id, 'userId');
 
       expect(result).toEqual(diary);
     });
