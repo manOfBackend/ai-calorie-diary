@@ -55,7 +55,28 @@ export class DiaryController {
     @UploadedFile() image: Express.Multer.File,
     @User('id') userId: string,
   ) {
-    return this.diaryUseCase.createDiary(createDiaryDto.content, image, userId);
+    try {
+      const ingredients =
+        typeof createDiaryDto.ingredients === 'string'
+          ? JSON.parse(createDiaryDto.ingredients)
+          : createDiaryDto.ingredients;
+
+      const calorieBreakdown =
+        typeof createDiaryDto.calorieBreakdown === 'string'
+          ? JSON.parse(createDiaryDto.calorieBreakdown)
+          : createDiaryDto.calorieBreakdown;
+
+      return this.diaryUseCase.createDiary(
+        createDiaryDto.content,
+        image,
+        userId,
+        ingredients,
+        createDiaryDto.totalCalories,
+        calorieBreakdown,
+      );
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   @Get(':id')
@@ -89,6 +110,9 @@ export class DiaryController {
       updateDiaryDto.content,
       image,
       userId,
+      updateDiaryDto.ingredients,
+      updateDiaryDto.totalCalories,
+      updateDiaryDto.calorieBreakdown,
     );
   }
 

@@ -45,6 +45,20 @@ describe('DiaryRepositoryAdapter', () => {
         'aaaa1',
         new Date(),
         new Date(),
+        ['chicken', 'salad'],
+        500,
+        {
+          chicken: {
+            protein: { amount: 30, unit: 'g', calories: 120 },
+            fat: { amount: 10, unit: 'g', calories: 90 },
+            carbohydrate: { amount: 0, unit: 'g', calories: 0 },
+          },
+          salad: {
+            protein: { amount: 2, unit: 'g', calories: 8 },
+            fat: { amount: 5, unit: 'g', calories: 45 },
+            carbohydrate: { amount: 10, unit: 'g', calories: 40 },
+          },
+        },
       );
       const createdDiary = { ...diaryData, id: '1' };
 
@@ -59,6 +73,9 @@ describe('DiaryRepositoryAdapter', () => {
           content: diaryData.content,
           imageUrl: diaryData.imageUrl,
           userId: diaryData.userId,
+          ingredients: diaryData.ingredients,
+          totalCalories: diaryData.totalCalories,
+          calorieBreakdown: diaryData.calorieBreakdown,
         },
       });
       expect(result).toBeInstanceOf(Diary);
