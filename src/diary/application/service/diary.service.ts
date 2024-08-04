@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -12,6 +13,7 @@ import {
   DIARY_REPOSITORY_PORT,
   DiaryRepositoryPort,
 } from '@diary/application/port/out/diary-repository.port';
+import { FoodBreakdown } from '@common/dto/Ingredient.dto';
 
 @Injectable()
 export class DiaryService implements DiaryUseCase {
@@ -25,6 +27,9 @@ export class DiaryService implements DiaryUseCase {
     content: string,
     imageFile: Express.Multer.File | undefined,
     userId: string,
+    ingredients: string[],
+    totalCalories: number | null,
+    calorieBreakdown: FoodBreakdown | null,
   ): Promise<Diary> {
     let imageUrl: string | null = null;
     if (imageFile) {
@@ -37,17 +42,22 @@ export class DiaryService implements DiaryUseCase {
       userId,
       new Date(),
       new Date(),
-      [],
-      0,
-      {},
+      ingredients,
+      totalCalories,
+      calorieBreakdown,
     );
     return this.diaryRepository.createDiary(diary);
   }
 
-  async getDiaryById(id: string): Promise<Diary | null> {
+  async getDiaryById(id: string, userId?: string): Promise<Diary | null> {
     const existingDiary = await this.diaryRepository.findDiaryById(id);
     if (!existingDiary) {
       throw new NotFoundException('Diary not found');
+    }
+    if (existingDiary.userId !== userId) {
+      throw new ForbiddenException(
+        'You are not authorized to access this diary',
+      );
     }
     return existingDiary;
   }
@@ -67,6 +77,9 @@ export class DiaryService implements DiaryUseCase {
     content: string,
     imageFile: Express.Multer.File | undefined,
     userId: string,
+    ingredients?: string[],
+    totalCalories?: number | null,
+    calorieBreakdown?: FoodBreakdown | null,
   ): Promise<Diary> {
     const existingDiary = await this.diaryRepository.findDiaryById(id);
     if (!existingDiary) {
@@ -83,7 +96,13 @@ export class DiaryService implements DiaryUseCase {
       imageUrl = await this.s3Service.uploadFile(imageFile);
     }
 
-    return this.diaryRepository.updateDiary(id, { content, imageUrl });
+    return this.diaryRepository.updateDiary(id, {
+      content,
+      imageUrl,
+      ingredients,
+      totalCalories,
+      calorieBreakdown,
+    });
   }
 
   async deleteDiary(id: string, userId: string): Promise<void> {

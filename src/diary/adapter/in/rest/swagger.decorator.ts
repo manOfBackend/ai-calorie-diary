@@ -52,6 +52,27 @@ export function SwaggerCreateDiary() {
             example: 'https://example.com/images/1234567890.jpg',
           },
           userId: { type: 'string', example: '0987654321' },
+          ingredients: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['chicken', 'salad'],
+          },
+          totalCalories: { type: 'number', example: 500 },
+          calorieBreakdown: {
+            type: 'object',
+            example: {
+              chicken: {
+                protein: { amount: 30, unit: 'g', calories: 120 },
+                fat: { amount: 10, unit: 'g', calories: 90 },
+                carbohydrate: { amount: 0, unit: 'g', calories: 0 },
+              },
+              salad: {
+                protein: { amount: 2, unit: 'g', calories: 8 },
+                fat: { amount: 5, unit: 'g', calories: 45 },
+                carbohydrate: { amount: 10, unit: 'g', calories: 40 },
+              },
+            },
+          },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
         },
@@ -90,6 +111,27 @@ export function SwaggerGetDiary() {
             example: 'https://example.com/images/1234567890.jpg',
           },
           userId: { type: 'string', example: '0987654321' },
+          ingredients: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['chicken', 'salad'],
+          },
+          totalCalories: { type: 'number', example: 500 },
+          calorieBreakdown: {
+            type: 'object',
+            example: {
+              chicken: {
+                protein: { amount: 30, unit: 'g', calories: 120 },
+                fat: { amount: 10, unit: 'g', calories: 90 },
+                carbohydrate: { amount: 0, unit: 'g', calories: 0 },
+              },
+              salad: {
+                protein: { amount: 2, unit: 'g', calories: 8 },
+                fat: { amount: 5, unit: 'g', calories: 45 },
+                carbohydrate: { amount: 10, unit: 'g', calories: 40 },
+              },
+            },
+          },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
         },
