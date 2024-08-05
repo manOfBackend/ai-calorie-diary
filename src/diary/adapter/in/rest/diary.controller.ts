@@ -28,6 +28,7 @@ import {
   SwaggerGetDiary,
   SwaggerUpdateDiary,
   SwaggerDeleteDiary,
+  SwaggerGetUserDiaries,
 } from './swagger.decorator';
 import { User } from '@common/decorators/user.decorator';
 
@@ -85,6 +86,7 @@ export class DiaryController {
 
   @Get()
   @SwaggerDiary('사용자의 모든 일기 조회')
+  @SwaggerGetUserDiaries()
   async getUserDiaries(@User('id') userId: string) {
     return this.diaryUseCase.getDiariesByUserId(userId);
   }
