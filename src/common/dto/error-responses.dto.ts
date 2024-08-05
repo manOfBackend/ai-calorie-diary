@@ -58,3 +58,17 @@ export class InternalServerErrorResponseDto extends ErrorResponseDto {
   @ApiProperty({ example: 'SERVER_ERROR' })
   errorCode: string;
 }
+
+export class ForbiddenResponseDto extends ErrorResponseDto {
+  @ApiProperty({ example: 403 })
+  statusCode: number;
+
+  @ApiProperty({ example: 'Forbidden' })
+  error: string;
+
+  @ApiProperty({ example: 'You are not authorized to access this resource' })
+  message: string;
+
+  @ApiProperty({ example: 'FORBIDDEN' })
+  errorCode: string;
+}
