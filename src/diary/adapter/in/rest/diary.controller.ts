@@ -56,11 +56,6 @@ export class DiaryController {
     @User('id') userId: string,
   ) {
     try {
-      const ingredients =
-        typeof createDiaryDto.ingredients === 'string'
-          ? JSON.parse(createDiaryDto.ingredients)
-          : createDiaryDto.ingredients;
-
       const calorieBreakdown =
         typeof createDiaryDto.calorieBreakdown === 'string'
           ? JSON.parse(createDiaryDto.calorieBreakdown)
@@ -70,7 +65,6 @@ export class DiaryController {
         createDiaryDto.content,
         image,
         userId,
-        ingredients,
         createDiaryDto.totalCalories,
         calorieBreakdown,
       );
@@ -110,7 +104,6 @@ export class DiaryController {
       updateDiaryDto.content,
       image,
       userId,
-      updateDiaryDto.ingredients,
       updateDiaryDto.totalCalories,
       updateDiaryDto.calorieBreakdown,
     );

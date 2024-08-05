@@ -8,7 +8,6 @@ export class Diary {
     public userId: string,
     public createdAt: Date,
     public updatedAt: Date,
-    public ingredients?: string[],
     public totalCalories?: number,
     public calorieBreakdown?: FoodBreakdown,
   ) {}

@@ -55,7 +55,6 @@ describe('DiaryService', () => {
       const imageFile = { buffer: Buffer.from('test') } as Express.Multer.File;
       const userId = '1';
       const imageUrl = 'http://test-image-url.com';
-      const ingredients = ['chicken', 'salad'];
       const totalCalories = 500;
       const calorieBreakdown: FoodBreakdown = {
         chicken: {
@@ -76,7 +75,6 @@ describe('DiaryService', () => {
         userId,
         new Date(),
         new Date(),
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -88,7 +86,6 @@ describe('DiaryService', () => {
         content,
         imageFile,
         userId,
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -103,7 +100,6 @@ describe('DiaryService', () => {
     it('should create a diary without image', async () => {
       const content = 'Test content';
       const userId = '1';
-      const ingredients = ['apple', 'banana'];
       const totalCalories = 200;
       const calorieBreakdown: FoodBreakdown = {
         apple: {
@@ -124,7 +120,6 @@ describe('DiaryService', () => {
         userId,
         new Date(),
         new Date(),
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -135,7 +130,6 @@ describe('DiaryService', () => {
         content,
         undefined,
         userId,
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -158,7 +152,6 @@ describe('DiaryService', () => {
         'userId',
         new Date(),
         new Date(),
-        ['ingredient'],
         100,
         {},
       );
@@ -190,7 +183,6 @@ describe('DiaryService', () => {
           userId,
           new Date(),
           new Date(),
-          ['ingredient1'],
           100,
           {},
         ),
@@ -201,7 +193,6 @@ describe('DiaryService', () => {
           userId,
           new Date(),
           new Date(),
-          ['ingredient2'],
           200,
           {},
         ),
@@ -234,7 +225,6 @@ describe('DiaryService', () => {
       } as Express.Multer.File;
       const userId = '1';
       const newImageUrl = 'http://new-image-url.com';
-      const ingredients = ['chicken', 'broccoli'];
       const totalCalories = 400;
       const calorieBreakdown: FoodBreakdown = {
         chicken: {
@@ -255,7 +245,6 @@ describe('DiaryService', () => {
         userId,
         new Date(),
         new Date(),
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -268,7 +257,6 @@ describe('DiaryService', () => {
           userId,
           new Date(),
           new Date(),
-          ['old ingredient'],
           300,
           {},
         ),
@@ -281,7 +269,6 @@ describe('DiaryService', () => {
         content,
         imageFile,
         userId,
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -292,7 +279,6 @@ describe('DiaryService', () => {
         expect.objectContaining({
           content,
           imageUrl: newImageUrl,
-          ingredients,
           totalCalories,
           calorieBreakdown,
         }),
@@ -305,7 +291,6 @@ describe('DiaryService', () => {
       const content = 'Updated content';
       const userId = '1';
       const oldImageUrl = 'http://old-image-url.com';
-      const ingredients = ['apple', 'banana'];
       const totalCalories = 200;
       const calorieBreakdown: FoodBreakdown = {
         apple: {
@@ -326,7 +311,6 @@ describe('DiaryService', () => {
         userId,
         new Date(),
         new Date(),
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -339,7 +323,6 @@ describe('DiaryService', () => {
           userId,
           new Date(),
           new Date(),
-          ['old ingredient'],
           300,
           {},
         ),
@@ -351,7 +334,6 @@ describe('DiaryService', () => {
         content,
         undefined,
         userId,
-        ingredients,
         totalCalories,
         calorieBreakdown,
       );
@@ -362,7 +344,6 @@ describe('DiaryService', () => {
         expect.objectContaining({
           content,
           imageUrl: oldImageUrl,
-          ingredients,
           totalCalories,
           calorieBreakdown,
         }),
@@ -376,17 +357,7 @@ describe('DiaryService', () => {
       const userId = '2';
 
       mockDiaryRepository.findDiaryById.mockResolvedValue(
-        new Diary(
-          id,
-          'Old content',
-          null,
-          '1',
-          new Date(),
-          new Date(),
-          [],
-          0,
-          {},
-        ),
+        new Diary(id, 'Old content', null, '1', new Date(), new Date(), 0, {}),
       );
 
       await expect(
@@ -418,7 +389,6 @@ describe('DiaryService', () => {
         userId,
         new Date(),
         new Date(),
-        ['ingredient'],
         100,
         {},
       );
@@ -440,7 +410,7 @@ describe('DiaryService', () => {
       const userId = '2';
 
       mockDiaryRepository.findDiaryById.mockResolvedValue(
-        new Diary(id, 'Content', null, '1', new Date(), new Date(), [], 0, {}),
+        new Diary(id, 'Content', null, '1', new Date(), new Date(), 0, {}),
       );
 
       await expect(service.deleteDiary(id, userId)).rejects.toThrow(
