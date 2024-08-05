@@ -8,7 +8,6 @@ export interface DiaryUseCase {
     content: string,
     image: Express.Multer.File | undefined,
     userId: string,
-    ingredients: string[],
     totalCalories: number | null,
     calorieBreakdown: FoodBreakdown | null,
   ): Promise<Diary>;
@@ -22,7 +21,6 @@ export interface DiaryUseCase {
     content: string,
     image: Express.Multer.File | undefined,
     userId: string,
-    ingredients?: string[],
     totalCalories?: number | null,
     calorieBreakdown?: FoodBreakdown | null,
   ): Promise<Diary>;

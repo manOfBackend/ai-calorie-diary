@@ -95,7 +95,6 @@ describe('DiaryController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: 'Test diary content',
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: calorieBreakdown,
         })
@@ -104,7 +103,6 @@ describe('DiaryController (e2e)', () => {
           expect(res.body).toHaveProperty('id');
           expect(res.body.content).toBe('Test diary content');
           expect(res.body.userId).toBe(userId);
-          expect(res.body.ingredients).toEqual(['chicken', 'salad']);
           expect(res.body.totalCalories).toBe(500);
           expect(res.body.calorieBreakdown).toEqual(calorieBreakdown);
         });
@@ -133,13 +131,11 @@ describe('DiaryController (e2e)', () => {
         .attach('image', fileBuffer, 'icon.png')
         .field('content', 'Test diary content with image')
         .field('totalCalories', 500)
-        .field('ingredients', JSON.stringify(['chicken', 'salad']))
         .field('calorieBreakdown', JSON.stringify(calorieBreakdown))
         .expect(201)
         .expect((res) => {
           expect(res.body).toHaveProperty('imageUrl');
           expect(res.body.content).toBe('Test diary content with image');
-          expect(res.body.ingredients).toEqual(['chicken', 'salad']);
           expect(res.body.totalCalories).toBe(500);
           expect(res.body.calorieBreakdown).toEqual(calorieBreakdown);
         });
@@ -166,21 +162,18 @@ describe('DiaryController (e2e)', () => {
         {
           content: 'Test diary content 1',
           userId,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: calorieBreakdown,
         },
         {
           content: 'Test diary content 2',
           userId,
-          ingredients: ['beef', 'rice'],
           totalCalories: 700,
           calorieBreakdown: calorieBreakdown,
         },
         {
           content: 'Test diary content 3',
           userId,
-          ingredients: ['fish', 'vegetables'],
           totalCalories: 400,
           calorieBreakdown: calorieBreakdown,
         },
@@ -205,7 +198,6 @@ describe('DiaryController (e2e)', () => {
         expect(diary).toHaveProperty('content');
         expect(diary.content).toBe(diariesToCreate[index].content);
         expect(diary.userId).toBe(userId);
-        expect(diary.ingredients).toEqual(diariesToCreate[index].ingredients);
         expect(diary.totalCalories).toBe(diariesToCreate[index].totalCalories);
         expect(diary.calorieBreakdown).toEqual(
           diariesToCreate[index].calorieBreakdown,
@@ -239,7 +231,6 @@ describe('DiaryController (e2e)', () => {
         data: {
           content: 'Specific diary content',
           userId: userId,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: calorieBreakdown,
         },
@@ -253,7 +244,6 @@ describe('DiaryController (e2e)', () => {
           expect(res.body.id).toBe(diary.id);
           expect(res.body.content).toBe('Specific diary content');
           expect(res.body.userId).toBe(userId);
-          expect(res.body.ingredients).toEqual(['chicken', 'salad']);
           expect(res.body.totalCalories).toBe(500);
           expect(res.body.calorieBreakdown).toEqual(calorieBreakdown);
         });
@@ -279,7 +269,6 @@ describe('DiaryController (e2e)', () => {
         data: {
           content: 'Original content',
           userId: userId,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: initialCalorieBreakdown,
         },
@@ -303,7 +292,6 @@ describe('DiaryController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: 'Updated content',
-          ingredients: ['beef', 'rice'],
           totalCalories: 600,
           calorieBreakdown: updatedCalorieBreakdown,
         })
@@ -311,7 +299,6 @@ describe('DiaryController (e2e)', () => {
         .expect((res) => {
           expect(res.body.id).toBe(diary.id);
           expect(res.body.content).toBe('Updated content');
-          expect(res.body.ingredients).toEqual(['beef', 'rice']);
           expect(res.body.totalCalories).toBe(600);
           expect(res.body.calorieBreakdown).toEqual(updatedCalorieBreakdown);
         });
@@ -339,7 +326,6 @@ describe('DiaryController (e2e)', () => {
           content: 'Content to be deleted',
           userId: userId,
           imageUrl: mockImageUrl,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: calorieBreakdown,
         },
@@ -378,7 +364,6 @@ describe('DiaryController (e2e)', () => {
           content: 'Content to be deleted without image',
           userId: userId,
           imageUrl: null,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: calorieBreakdown,
         },
@@ -441,7 +426,6 @@ describe('DiaryController (e2e)', () => {
         data: {
           content: "Other user's diary",
           userId: otherUser.id,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: calorieBreakdown,
         },
@@ -461,7 +445,6 @@ describe('DiaryController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: '', // Empty content
-          ingredients: 'not an array', // Should be an array
           totalCalories: 'not a number', // Should be a number
           calorieBreakdown: 'not an object', // Should be an object
         })
@@ -473,7 +456,6 @@ describe('DiaryController (e2e)', () => {
         data: {
           content: 'Original content',
           userId: userId,
-          ingredients: ['chicken', 'salad'],
           totalCalories: 500,
           calorieBreakdown: {},
         },
@@ -484,7 +466,6 @@ describe('DiaryController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: '', // Empty content
-          ingredients: 'not an array', // Should be an array
           totalCalories: 'not a number', // Should be a number
           calorieBreakdown: 'not an object', // Should be an object
         })
@@ -502,32 +483,12 @@ describe('DiaryController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: longContent,
-          ingredients: ['ingredient'],
           totalCalories: 100,
           calorieBreakdown: {},
         })
         .expect(201);
 
       expect(response.body.content).toBe(longContent);
-    });
-
-    it('should handle creating a diary with a large number of ingredients', async () => {
-      const manyIngredients = Array(100)
-        .fill(0)
-        .map((_, i) => `ingredient${i}`);
-
-      const response = await request(app.getHttpServer())
-        .post('/diary')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          content: 'Diary with many ingredients',
-          ingredients: manyIngredients,
-          totalCalories: 1000,
-          calorieBreakdown: {},
-        })
-        .expect(201);
-
-      expect(response.body.ingredients).toEqual(manyIngredients);
     });
 
     it('should handle creating a diary with very precise calorie values', async () => {
@@ -545,7 +506,6 @@ describe('DiaryController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           content: 'Diary with precise calories',
-          ingredients: ['ingredient'],
           totalCalories: preciseTotalCalories,
           calorieBreakdown: preciseCalorieBreakdown,
         })

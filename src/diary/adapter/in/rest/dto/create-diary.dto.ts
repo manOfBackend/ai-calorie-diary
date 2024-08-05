@@ -1,4 +1,4 @@
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FoodBreakdown } from '@common/dto/Ingredient.dto';
 import { Transform } from 'class-transformer';
@@ -16,26 +16,6 @@ export class CreateDiaryDto {
   })
   @IsOptional()
   image?: Express.Multer.File;
-
-  @ApiProperty({
-    description: '음식 재료 목록',
-    required: false,
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch (e) {
-        console.log(e, 'value: ', value);
-        return value;
-      }
-    }
-    return value;
-  })
-  ingredients?: string[];
 
   @ApiProperty({ description: '총 칼로리', required: false, type: Number })
   @IsNumber()

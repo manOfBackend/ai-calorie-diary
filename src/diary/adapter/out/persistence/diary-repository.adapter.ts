@@ -22,7 +22,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
           content: diary.content,
           imageUrl: diary.imageUrl,
           userId: diary.userId,
-          ingredients: diary.ingredients,
           totalCalories: diary.totalCalories,
           calorieBreakdown: diary.calorieBreakdown,
         },
@@ -51,7 +50,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
       data: {
         content: diary.content,
         imageUrl: diary.imageUrl,
-        ingredients: diary.ingredients,
         totalCalories: diary.totalCalories,
         calorieBreakdown: diary.calorieBreakdown,
         updatedAt: new Date(),
@@ -73,7 +71,6 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
       diary.userId,
       diary.createdAt,
       diary.updatedAt,
-      diary.ingredients,
       diary.totalCalories,
       diary.calorieBreakdown,
     );

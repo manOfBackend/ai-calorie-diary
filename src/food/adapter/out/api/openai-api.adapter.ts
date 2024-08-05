@@ -60,6 +60,7 @@ export class OpenAIApiAdapter implements OpenAIApiPort {
       max_tokens: 1000,
       response_format: { type: 'json_object' },
     });
+    console.log(response);
 
     const analysisResult = JSON.parse(response.choices[0].message.content);
     return new FoodAnalysis(

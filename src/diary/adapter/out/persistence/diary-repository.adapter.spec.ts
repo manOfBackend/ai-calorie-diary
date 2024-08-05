@@ -45,7 +45,6 @@ describe('DiaryRepositoryAdapter', () => {
         'aaaa1',
         new Date(),
         new Date(),
-        ['chicken', 'salad'],
         500,
         {
           chicken: {
@@ -73,7 +72,6 @@ describe('DiaryRepositoryAdapter', () => {
           content: diaryData.content,
           imageUrl: diaryData.imageUrl,
           userId: diaryData.userId,
-          ingredients: diaryData.ingredients,
           totalCalories: diaryData.totalCalories,
           calorieBreakdown: diaryData.calorieBreakdown,
         },

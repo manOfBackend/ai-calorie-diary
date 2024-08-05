@@ -27,7 +27,6 @@ export class DiaryService implements DiaryUseCase {
     content: string,
     imageFile: Express.Multer.File | undefined,
     userId: string,
-    ingredients: string[],
     totalCalories: number | null,
     calorieBreakdown: FoodBreakdown | null,
   ): Promise<Diary> {
@@ -42,7 +41,6 @@ export class DiaryService implements DiaryUseCase {
       userId,
       new Date(),
       new Date(),
-      ingredients,
       totalCalories,
       calorieBreakdown,
     );
@@ -77,7 +75,6 @@ export class DiaryService implements DiaryUseCase {
     content: string,
     imageFile: Express.Multer.File | undefined,
     userId: string,
-    ingredients?: string[],
     totalCalories?: number | null,
     calorieBreakdown?: FoodBreakdown | null,
   ): Promise<Diary> {
@@ -99,7 +96,6 @@ export class DiaryService implements DiaryUseCase {
     return this.diaryRepository.updateDiary(id, {
       content,
       imageUrl,
-      ingredients,
       totalCalories,
       calorieBreakdown,
     });
