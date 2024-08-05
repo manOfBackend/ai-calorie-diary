@@ -23,7 +23,6 @@ export class FoodAnalyzedHandler {
       content: description,
       imageUrl,
       userId,
-      ingredients: analysis.ingredients,
       totalCalories: analysis.totalCalories,
       calorieBreakdown: analysis.breakdown,
     });
