@@ -30,19 +30,24 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
   }
 
   async save(user: User): Promise<User> {
-    console.log(user);
     try {
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: {
           email: user.email,
           password: user.password,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          provider: user.provider,
+          providerId: user.providerId,
+          profilePicture: user.profilePicture,
           targetCalories: user.targetCalories,
         },
       });
       return this.mapToUser(updatedUser);
     } catch (e) {
-      console.log(e);
+      console.error('Error updating user:', e);
+      throw e;
     }
   }
 
@@ -102,6 +107,11 @@ export class UserRepositoryAdapter implements UserRepositoryPort {
       userData.id,
       userData.email,
       userData.password,
+      userData.firstName,
+      userData.lastName,
+      userData.provider,
+      userData.providerId,
+      userData.profilePicture,
       userData.targetCalories,
       userData.createdAt,
       userData.updatedAt,

@@ -30,6 +30,10 @@ export class UserService implements UserUseCase {
     return this.userRepository.create(user);
   }
 
+  async update(user: User): Promise<User> {
+    return this.userRepository.save(user);
+  }
+
   async saveRefreshToken(
     userId: string,
     token: string,
