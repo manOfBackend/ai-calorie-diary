@@ -9,17 +9,20 @@ import {
   USER_USE_CASE,
   UserUseCase,
 } from '@user/application/port/in/user.use-case';
+import { OAuthPort } from '@auth/application/port/out/oauth.port';
 
 describe('AuthService', () => {
   let service: AuthService;
   let userUseCaseMock: jest.Mocked<UserUseCase>;
   let jwtServiceMock: jest.Mocked<JwtService>;
+  let oauthFactoryMock: Record<string, jest.Mocked<OAuthPort>>;
 
   beforeEach(async () => {
     userUseCaseMock = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       saveRefreshToken: jest.fn(),
       findRefreshToken: jest.fn(),
       deleteRefreshToken: jest.fn(),
@@ -33,18 +36,20 @@ describe('AuthService', () => {
       verify: jest.fn(),
       verifyAsync: jest.fn(),
       decode: jest.fn(),
-      getSecretKey: jest.fn(),
-      logger: jest.fn(),
-      mergeJwtOptions: jest.fn(),
-      options: jest.fn(),
-      overrideSecretFromOptions: jest.fn(),
     } as unknown as jest.Mocked<JwtService>;
+
+    oauthFactoryMock = {
+      google: {
+        validate: jest.fn(),
+      },
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: USER_USE_CASE, useValue: userUseCaseMock },
         { provide: JwtService, useValue: jwtServiceMock },
+        { provide: 'OAuthFactory', useValue: oauthFactoryMock },
       ],
     }).compile();
 
@@ -69,7 +74,12 @@ describe('AuthService', () => {
         '1',
         registerCommand.email,
         'hashedPassword',
-        2000,
+        null, // firstName
+        null, // lastName
+        null, // provider
+        null, // providerId
+        null, // profilePicture
+        2000, // targetCalories
         new Date(),
         new Date(),
       );
@@ -122,7 +132,12 @@ describe('AuthService', () => {
         '1',
         registerCommand.email,
         'hashedPassword',
-        2000,
+        null, // firstName
+        null, // lastName
+        null, // provider
+        null, // providerId
+        null, // profilePicture
+        2000, // targetCalories
         new Date(),
         new Date(),
       );
@@ -145,7 +160,12 @@ describe('AuthService', () => {
         '1',
         loginCommand.email,
         await bcrypt.hash(loginCommand.password, 10),
-        2000,
+        null, // firstName
+        null, // lastName
+        null, // provider
+        null, // providerId
+        null, // profilePicture
+        2000, // targetCalories
         new Date(),
         new Date(),
       );
@@ -187,7 +207,12 @@ describe('AuthService', () => {
         '1',
         loginCommand.email,
         await bcrypt.hash('password123', 10),
-        2000,
+        null, // firstName
+        null, // lastName
+        null, // provider
+        null, // providerId
+        null, // profilePicture
+        2000, // targetCalories
         new Date(),
         new Date(),
       );
@@ -220,7 +245,12 @@ describe('AuthService', () => {
         '1',
         'test@example.com',
         'hashedPassword',
-        2000,
+        null, // firstName
+        null, // lastName
+        null, // provider
+        null, // providerId
+        null, // profilePicture
+        2000, // targetCalories
         new Date(),
         new Date(),
       );
@@ -267,7 +297,12 @@ describe('AuthService', () => {
         '1',
         'test@example.com',
         'hashedPassword',
-        2000,
+        null, // firstName
+        null, // lastName
+        null, // provider
+        null, // providerId
+        null, // profilePicture
+        2000, // targetCalories
         new Date(),
         new Date(),
       );
@@ -284,6 +319,127 @@ describe('AuthService', () => {
 
       await expect(service.refreshToken(refreshTokenCommand)).rejects.toThrow(
         UnauthorizedException,
+      );
+    });
+  });
+
+  describe('oauthLogin', () => {
+    it('should login or create user with OAuth', async () => {
+      const oauthUser = {
+        id: '123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        provider: 'google',
+        providerId: '123',
+        profilePicture: 'http://example.com/pic.jpg',
+      };
+      const user = new User(
+        '1',
+        oauthUser.email,
+        null,
+        oauthUser.firstName,
+        oauthUser.lastName,
+        oauthUser.provider,
+        oauthUser.providerId,
+        oauthUser.profilePicture,
+        2000,
+        new Date(),
+        new Date(),
+      );
+
+      oauthFactoryMock.google.validate.mockResolvedValue(oauthUser);
+      userUseCaseMock.findByEmail.mockResolvedValue(null);
+      userUseCaseMock.create.mockResolvedValue(user);
+      jwtServiceMock.sign.mockReturnValue('token');
+
+      const result = await service.oauthLogin(
+        'google',
+        'accessToken',
+        'refreshToken',
+        {},
+      );
+
+      expect(result).toEqual({
+        accessToken: 'token',
+        refreshToken: 'token',
+        user: expect.objectContaining({
+          id: user.id,
+          email: user.email,
+        }),
+      });
+    });
+  });
+
+  describe('oauthSignup', () => {
+    it('should create a new user with OAuth data', async () => {
+      const oauthUser = {
+        id: '123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        provider: 'google',
+        providerId: '123',
+        profilePicture: 'http://example.com/pic.jpg',
+      };
+      const user = new User(
+        '1',
+        oauthUser.email,
+        null,
+        oauthUser.firstName,
+        oauthUser.lastName,
+        oauthUser.provider,
+        oauthUser.providerId,
+        oauthUser.profilePicture,
+        2000,
+        new Date(),
+        new Date(),
+      );
+
+      userUseCaseMock.findByEmail.mockResolvedValue(null);
+      userUseCaseMock.create.mockResolvedValue(user);
+      jwtServiceMock.sign.mockReturnValue('token');
+
+      const result = await service.oauthSignup(oauthUser);
+
+      expect(result).toEqual({
+        user: expect.objectContaining({
+          id: user.id,
+          email: user.email,
+        }),
+        accessToken: 'token',
+        refreshToken: 'token',
+      });
+    });
+
+    it('should throw ConflictException if user already exists', async () => {
+      const oauthUser = {
+        id: '123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        provider: 'google',
+        providerId: '123',
+        profilePicture: 'http://example.com/pic.jpg',
+      };
+      const existingUser = new User(
+        '1',
+        oauthUser.email,
+        null,
+        oauthUser.firstName,
+        oauthUser.lastName,
+        oauthUser.provider,
+        oauthUser.providerId,
+        oauthUser.profilePicture,
+        2000,
+        new Date(),
+        new Date(),
+      );
+
+      userUseCaseMock.findByEmail.mockResolvedValue(existingUser);
+
+      await expect(service.oauthSignup(oauthUser)).rejects.toThrow(
+        ConflictException,
       );
     });
   });

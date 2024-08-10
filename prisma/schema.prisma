@@ -10,12 +10,19 @@ datasource db {
 model User {
   id             String        @id @default(uuid())
   email          String        @unique
-  password       String
+  password       String? // OAuth 사용자는 패스워드가 없을 수 있으므로 optional로 변경
+  firstName      String?
+  lastName       String?
+  provider       String? // OAuth 제공자 정보 (e.g., "google", "facebook")
+  providerId     String? // OAuth 제공자의 사용자 ID
+  profilePicture String?
   targetCalories Int?
   refreshToken   RefreshToken?
   diaries        Diary[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@unique([provider, providerId]) // provider와 providerId의 조합은 유일해야 함
 }
 
 model Diary {

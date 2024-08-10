@@ -10,6 +10,7 @@ import { AUTH_USE_CASE } from '@auth/application/port/in/auth.use-case';
 import { AuthService } from '@auth/application/service/auth.service';
 import { UserModule } from '@user/user.module';
 import { MetricsModule } from '@common/metrics/metrics.module';
+import { GoogleStrategy } from '@auth/adapter/out/oauth/google.strategy';
 
 @Module({
   imports: [
@@ -34,6 +35,14 @@ import { MetricsModule } from '@common/metrics/metrics.module';
       useClass: AuthService,
     },
     JwtStrategy,
+    GoogleStrategy,
+    {
+      provide: 'OAuthFactory',
+      useFactory: (googleStrategy: GoogleStrategy) => ({
+        google: googleStrategy,
+      }),
+      inject: [GoogleStrategy],
+    },
   ],
   exports: [AUTH_USE_CASE],
 })

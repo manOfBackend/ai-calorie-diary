@@ -15,6 +15,8 @@ import {
   USER_USE_CASE,
   UserUseCase,
 } from '@user/application/port/in/user.use-case';
+import { OAuthPort } from '@auth/application/port/out/oauth.port';
+import { OAuthUser } from '@auth/domain/oauth-user';
 
 @Injectable()
 export class AuthService implements AuthUseCase {
@@ -22,19 +24,96 @@ export class AuthService implements AuthUseCase {
     @Inject(USER_USE_CASE)
     private readonly userService: UserUseCase,
     private readonly jwtService: JwtService,
+    @Inject('OAuthFactory')
+    private readonly oauthFactory: Record<string, OAuthPort>,
   ) {}
 
   async login(
     command: LoginCommand,
   ): Promise<{ accessToken: string; refreshToken: string; user: User }> {
     const user = await this.userService.findByEmail(command.email);
-    if (!user || !(await bcrypt.compare(command.password, user.password))) {
+    if (
+      !user ||
+      !user.password ||
+      !(await bcrypt.compare(command.password, user.password))
+    ) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
     return { accessToken, refreshToken, user };
+  }
+
+  async oauthLogin(
+    provider: string,
+    accessToken: string,
+    refreshToken: string,
+    profile: any,
+  ): Promise<{ accessToken: string; refreshToken: string; user: User }> {
+    const oauthStrategy = this.oauthFactory[provider];
+    if (!oauthStrategy) {
+      throw new Error(`Unsupported OAuth provider: ${provider}`);
+    }
+
+    const oauthUser = await oauthStrategy.validate(
+      accessToken,
+      refreshToken,
+      profile,
+    );
+    let user = await this.userService.findByEmail(oauthUser.email);
+
+    if (!user) {
+      user = User.create(
+        oauthUser.email,
+        null, // password is null for OAuth users
+        oauthUser.firstName || null,
+        oauthUser.lastName || null,
+        oauthUser.provider,
+        oauthUser.providerId,
+        oauthUser.profilePicture || null,
+      );
+      user = await this.userService.create(user);
+    } else if (!user.provider || !user.providerId) {
+      // 기존 사용자가 OAuth로 처음 로그인하는 경우
+      user.provider = oauthUser.provider;
+      user.providerId = oauthUser.providerId;
+      user.profilePicture = oauthUser.profilePicture || user.profilePicture;
+      user = await this.userService.update(user);
+    }
+
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      await this.generateTokens(user);
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      user,
+    };
+  }
+
+  async oauthSignup(
+    oauthUser: OAuthUser,
+  ): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    let user = await this.userService.findByEmail(oauthUser.email);
+
+    if (user) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    user = User.create(
+      oauthUser.email,
+      null, // password is null for OAuth users
+      oauthUser.firstName || null,
+      oauthUser.lastName || null,
+      oauthUser.provider,
+      oauthUser.providerId,
+      oauthUser.profilePicture || null,
+    );
+
+    const savedUser = await this.userService.create(user);
+    const { accessToken, refreshToken } = await this.generateTokens(savedUser);
+
+    return { user: savedUser, accessToken, refreshToken };
   }
 
   async register(
@@ -46,13 +125,11 @@ export class AuthService implements AuthUseCase {
     }
 
     const hashedPassword = await bcrypt.hash(command.password, 10);
-    const user = new User(
-      null,
+    const user = User.create(
       command.email,
       hashedPassword,
-      2000,
-      new Date(),
-      new Date(),
+      command.firstName || null,
+      command.lastName || null,
     );
     const savedUser = await this.userService.create(user);
     const { accessToken, refreshToken } = await this.generateTokens(savedUser);
