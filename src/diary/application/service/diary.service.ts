@@ -70,6 +70,14 @@ export class DiaryService implements DiaryUseCase {
     return existingDiary;
   }
 
+  async getDiariesByPeriod(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Diary[]> {
+    return this.diaryRepository.findDiariesByPeriod(userId, startDate, endDate);
+  }
+
   async updateDiary(
     id: string,
     content: string,

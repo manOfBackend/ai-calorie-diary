@@ -44,6 +44,24 @@ export class DiaryRepositoryAdapter implements DiaryRepositoryPort {
     return diaries.map(this.mapToDomain);
   }
 
+  async findDiariesByPeriod(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Diary[]> {
+    const diaries = await this.prisma.diary.findMany({
+      where: {
+        userId,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return diaries.map(this.mapToDomain);
+  }
+
   async updateDiary(id: string, diary: Partial<Diary>): Promise<Diary> {
     const updatedDiary = await this.prisma.diary.update({
       where: { id },

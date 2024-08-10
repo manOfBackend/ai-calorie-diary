@@ -19,6 +19,7 @@ describe('DiaryService', () => {
       createDiary: jest.fn(),
       findDiaryById: jest.fn(),
       findDiariesByUserId: jest.fn(),
+      findDiariesByPeriod: jest.fn(),
       updateDiary: jest.fn(),
       deleteDiary: jest.fn(),
     };
@@ -213,6 +214,63 @@ describe('DiaryService', () => {
       await expect(service.getDiariesByUserId(userId)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('getDiariesByPeriod', () => {
+    it('should return diaries for a specific period', async () => {
+      const userId = '1';
+      const startDate = new Date('2023-01-01');
+      const endDate = new Date('2023-12-31');
+      const mockDiaries = [
+        new Diary(
+          '1',
+          'Diary 1',
+          null,
+          userId,
+          new Date('2023-06-15'),
+          new Date('2023-06-15'),
+          500,
+          {},
+        ),
+        new Diary(
+          '2',
+          'Diary 2',
+          null,
+          userId,
+          new Date('2023-09-01'),
+          new Date('2023-09-01'),
+          700,
+          {},
+        ),
+      ];
+
+      mockDiaryRepository.findDiariesByPeriod.mockResolvedValue(mockDiaries);
+
+      const result = await service.getDiariesByPeriod(
+        userId,
+        startDate,
+        endDate,
+      );
+
+      expect(mockDiaryRepository.findDiariesByPeriod).toHaveBeenCalledWith(
+        userId,
+        startDate,
+        endDate,
+      );
+      expect(result).toEqual(mockDiaries);
+    });
+
+    it('should return empty array when no diaries found in the period', async () => {
+      const userId = '1';
+      const startDate = new Date('2023-01-01');
+      const endDate = new Date('2023-12-31');
+
+      mockDiaryRepository.findDiariesByPeriod.mockResolvedValue([]);
+
+      await expect(
+        service.getDiariesByPeriod(userId, startDate, endDate),
+      ).resolves.toEqual([]);
     });
   });
 

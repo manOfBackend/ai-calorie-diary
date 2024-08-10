@@ -1,16 +1,18 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Param,
+  BadRequestException,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
-  UploadedFile,
-  Inject,
-  Delete,
-  Put,
-  ParseUUIDPipe,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -21,16 +23,18 @@ import {
   DiaryUseCase,
 } from '@diary/application/port/in/diary.use-case';
 import { CreateDiaryDto } from './dto/create-diary.dto';
-import { ApiTags, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
-  SwaggerDiary,
   SwaggerCreateDiary,
-  SwaggerGetDiary,
-  SwaggerUpdateDiary,
   SwaggerDeleteDiary,
+  SwaggerDiary,
+  SwaggerGetDiariesByPeriod,
+  SwaggerGetDiary,
   SwaggerGetUserDiaries,
+  SwaggerUpdateDiary,
 } from './swagger.decorator';
 import { User } from '@common/decorators/user.decorator';
+import { GetDiariesByPeriodDto } from '@diary/adapter/in/rest/dto/get-diaries-by-period.dto';
 
 @ApiTags('diary')
 @Controller('diary')
@@ -72,6 +76,20 @@ export class DiaryController {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  @Get('period')
+  @SwaggerDiary('특정 기간의 일기 조회')
+  @SwaggerGetDiariesByPeriod()
+  async getDiariesByPeriod(
+    @User('id') userId: string,
+    @Query() getDiariesByPeriodDto: GetDiariesByPeriodDto,
+  ) {
+    const { startDate, endDate } = getDiariesByPeriodDto;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    return this.diaryUseCase.getDiariesByPeriod(userId, start, end);
   }
 
   @Get(':id')
