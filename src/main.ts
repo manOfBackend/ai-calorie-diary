@@ -5,7 +5,6 @@ import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 import { CustomLoggerService } from '@common/logger/custom-logger.service';
-import * as expressStatusMonitor from 'express-status-monitor';
 
 async function bootstrap() {
   const logger = new CustomLoggerService();
@@ -35,7 +34,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   app.enableCors();
-  app.use(expressStatusMonitor());
   await app.listen(3001);
 }
 bootstrap();
