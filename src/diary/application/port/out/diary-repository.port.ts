@@ -8,4 +8,9 @@ export interface DiaryRepositoryPort {
   findDiariesByUserId(userId: string): Promise<Diary[]>;
   updateDiary(id: string, diary: Partial<Diary>): Promise<Diary>;
   deleteDiary(id: string): Promise<void>;
+  findDiariesByPeriod(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Diary[]>;
 }

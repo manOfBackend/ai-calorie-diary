@@ -250,6 +250,106 @@ describe('DiaryController (e2e)', () => {
     });
   });
 
+  describe('/diary/period (GET)', () => {
+    it('should get diaries for a specific period', async () => {
+      const calorieBreakdown: FoodBreakdown = {
+        chicken: {
+          protein: { amount: 30, unit: 'g', calories: 120 },
+          fat: { amount: 10, unit: 'g', calories: 90 },
+          carbohydrate: { amount: 0, unit: 'g', calories: 0 },
+        },
+        salad: {
+          protein: { amount: 2, unit: 'g', calories: 8 },
+          fat: { amount: 5, unit: 'g', calories: 45 },
+          carbohydrate: { amount: 10, unit: 'g', calories: 40 },
+        },
+      };
+
+      const startDate = new Date('2023-01-01T00:00:00.000Z');
+      const endDate = new Date('2023-12-31T23:59:59.999Z');
+
+      // 테스트용 일기 여러 개 생성 (기간 내/외 모두 포함)
+      const diariesToCreate = [
+        {
+          content: 'Diary within period 1',
+          userId,
+          totalCalories: 500,
+          calorieBreakdown,
+          createdAt: new Date('2023-06-15T12:00:00.000Z'), // 기간 내
+        },
+        {
+          content: 'Diary within period 2',
+          userId,
+          totalCalories: 700,
+          calorieBreakdown,
+          createdAt: new Date('2023-09-01T12:00:00.000Z'), // 기간 내
+        },
+        {
+          content: 'Diary outside period',
+          userId,
+          totalCalories: 400,
+          calorieBreakdown,
+          createdAt: new Date('2022-12-31T12:00:00.000Z'), // 기간 외
+        },
+      ];
+
+      await prismaService.$transaction(async (prisma) => {
+        await Promise.all(
+          diariesToCreate.map((diary) => prisma.diary.create({ data: diary })),
+        );
+      });
+
+      const response = await request(app.getHttpServer())
+        .get('/diary/period')
+        .query({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        })
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(2); // 기간 내의 일기만 2개여야 함
+
+      response.body.forEach((diary) => {
+        expect(diary).toHaveProperty('id');
+        expect(diary).toHaveProperty('content');
+        expect(diary.userId).toBe(userId);
+        expect(diary.totalCalories).toBeDefined();
+        expect(diary.calorieBreakdown).toBeDefined();
+        const diaryDate = new Date(diary.createdAt);
+        expect(diaryDate.getTime()).toBeGreaterThanOrEqual(startDate.getTime());
+        expect(diaryDate.getTime()).toBeLessThanOrEqual(endDate.getTime());
+      });
+    });
+
+    it('should return 400 for invalid date format', async () => {
+      return request(app.getHttpServer())
+        .get('/diary/period')
+        .query({ startDate: 'invalid-date', endDate: 'invalid-date' })
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+    });
+
+    it('should return empty array when no diaries in the specified period', async () => {
+      const startDate = new Date('2024-01-01T00:00:00.000Z');
+      const endDate = new Date('2024-12-31T23:59:59.999Z');
+
+      const response = await request(app.getHttpServer())
+        .get('/diary/period')
+        .query({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        })
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(0);
+    });
+  });
+
   describe('/diary/:id (PUT)', () => {
     it('should update a diary entry', async () => {
       const initialCalorieBreakdown: FoodBreakdown = {

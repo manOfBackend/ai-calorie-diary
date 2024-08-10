@@ -6,6 +6,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
 import { CreateDiaryDto } from './dto/create-diary.dto';
@@ -257,6 +258,37 @@ export function SwaggerDeleteDiary() {
       status: 404,
       description: '일기를 찾을 수 없음',
       type: NotFoundResponseDto,
+    }),
+  );
+}
+
+export function SwaggerGetDiariesByPeriod() {
+  return applyDecorators(
+    ApiOperation({ summary: '특정 기간의 일기 조회' }),
+    ApiQuery({
+      name: 'startDate',
+      required: true,
+      type: String,
+      example: '2023-01-01',
+    }),
+    ApiQuery({
+      name: 'endDate',
+      required: true,
+      type: String,
+      example: '2023-12-31',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '특정 기간의 일기를 성공적으로 조회했습니다.',
+      schema: {
+        type: 'array',
+        items: diaryResponseSchema,
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '잘못된 요청',
+      type: BadRequestResponseDto,
     }),
   );
 }

@@ -16,6 +16,12 @@ export interface DiaryUseCase {
 
   getDiariesByUserId(userId: string): Promise<Diary[]>;
 
+  getDiariesByPeriod(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Diary[]>;
+
   updateDiary(
     id: string,
     content: string,
