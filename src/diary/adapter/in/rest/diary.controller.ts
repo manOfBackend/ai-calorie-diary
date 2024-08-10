@@ -34,6 +34,7 @@ import {
 } from './swagger.decorator';
 import { User } from '@common/decorators/user.decorator';
 import { GetDiariesByPeriodDto } from '@diary/adapter/in/rest/dto/get-diaries-by-period.dto';
+import { DiaryPeriodMetric } from '@common/metrics/decorators/diary-period-metric.decorator';
 
 @ApiTags('diary')
 @Controller('diary')
@@ -80,6 +81,7 @@ export class DiaryController {
   @Get('period')
   @SwaggerDiary('특정 기간의 일기 조회')
   @SwaggerGetDiariesByPeriod()
+  @DiaryPeriodMetric()
   async getDiariesByPeriod(
     @User('id') userId: string,
     @Query() getDiariesByPeriodDto: GetDiariesByPeriodDto,

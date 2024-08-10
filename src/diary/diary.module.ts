@@ -6,8 +6,10 @@ import { DIARY_REPOSITORY_PORT } from './application/port/out/diary-repository.p
 import { S3Service } from '@common/s3/s3.service';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { DIARY_USE_CASE } from './application/port/in/diary.use-case';
+import { MetricsModule } from '@common/metrics/metrics.module';
 
 @Module({
+  imports: [MetricsModule],
   controllers: [DiaryController],
   providers: [
     {

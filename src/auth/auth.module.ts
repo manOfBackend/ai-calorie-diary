@@ -9,9 +9,11 @@ import { AuthController } from '@auth/adapter/in/rest/auth.controller';
 import { AUTH_USE_CASE } from '@auth/application/port/in/auth.use-case';
 import { AuthService } from '@auth/application/service/auth.service';
 import { UserModule } from '@user/user.module';
+import { MetricsModule } from '@common/metrics/metrics.module';
 
 @Module({
   imports: [
+    MetricsModule,
     UserModule,
     PassportModule,
     JwtModule.registerAsync({
