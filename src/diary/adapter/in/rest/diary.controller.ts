@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -23,7 +22,7 @@ import {
   DiaryUseCase,
 } from '@diary/application/port/in/diary.use-case';
 import { CreateDiaryDto } from './dto/create-diary.dto';
-import { ApiBearerAuth, ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import {
   SwaggerCreateDiary,
   SwaggerDeleteDiary,
