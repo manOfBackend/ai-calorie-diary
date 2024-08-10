@@ -1,0 +1,133 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Diary Period API Latency",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(diary_period_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "95th Percentile"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(diary_period_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "Median"
+        },
+        {
+          "expr": "sum(rate(diary_period_request_duration_seconds_sum[5m])) / sum(rate(diary_period_request_duration_seconds_count[5m]))",
+          "legendFormat": "Average"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "s"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "title": "Diary Period API Throughput",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(diary_period_request_total[5m]))",
+          "legendFormat": "Requests per second"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "title": "Diary Period API Error Rate",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(diary_period_request_total{status=\"error\"}[5m])) / sum(rate(diary_period_request_total[5m])) * 100",
+          "legendFormat": "Error Rate %"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "percent"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "title": "Diary Period API In-Flight Requests",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "diary_period_request_in_flight",
+          "legendFormat": "In-Flight Requests"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "short"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      }
+    }
+  ],
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Diary API Dashboard",
+  "uid": null,
+  "version": 0
+}

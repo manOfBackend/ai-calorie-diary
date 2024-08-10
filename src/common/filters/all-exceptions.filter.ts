@@ -30,6 +30,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       errorCode = exceptionResponse.errorCode || this.getErrorCode(status);
     }
 
+    if (request.url.startsWith('/socket.io')) {
+      return response.status(status).send();
+    }
     this.loggerService.error(
       `${request.method} ${request.url}`,
       exception instanceof Error ? exception.stack : '',

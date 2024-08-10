@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@auth/auth.module';
 import { PrismaModule } from '@common/prisma/prisma.module';
@@ -9,6 +9,8 @@ import { InMemoryEventBus } from '@common/events/in-memory-event-bus';
 import { EventPublisherSymbol } from '@common/events/event-publisher.interface';
 import { EventSubscriberSymbol } from '@common/events/event-subscriber.interface';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { MetricsModule } from '@common/metrics/metrics.module';
+import { MetricsMiddleware } from '@common/metrics/metrics.middleware';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     AuthModule,
     DiaryModule,
     FoodModule,
+    MetricsModule,
   ],
   providers: [
     {
@@ -50,4 +53,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MetricsMiddleware).forRoutes('*');
+  }
+}
