@@ -3,11 +3,13 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Inject,
   Post,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -31,13 +33,15 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { ErrorResponseDto } from '@common/dto/error-response.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { OAuthSignupDto } from '@auth/adapter/in/rest/dto/oauth-signup.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     @Inject(AUTH_USE_CASE)
-    private readonly authUseCase: AuthUseCase,
+    private readonly authService: AuthUseCase,
   ) {}
 
   @ApiOperation({ summary: '사용자 로그인' })
@@ -69,7 +73,7 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     try {
       const command = new LoginCommand(loginDto.email, loginDto.password);
-      const { accessToken, refreshToken, user } = await this.authUseCase.login(
+      const { accessToken, refreshToken, user } = await this.authService.login(
         command,
       );
       return {
@@ -80,6 +84,29 @@ export class AuthController {
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
     }
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleAuth() {}
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res) {
+    const { accessToken } = await this.authService.oauthLogin(
+      'google',
+      req.user.accessToken,
+      req.user.refreshToken,
+      req.user,
+    );
+    res.redirect(`/dashboard?token=${accessToken}`);
+  }
+
+  @Post('oauth/signup')
+  async oauthSignup(@Body() oauthSignupDto: OAuthSignupDto) {
+    const { user, accessToken, refreshToken } =
+      await this.authService.oauthSignup(oauthSignupDto);
+    return { user, accessToken, refreshToken };
   }
 
   @ApiOperation({ summary: '토큰 갱신' })
@@ -100,7 +127,7 @@ export class AuthController {
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     try {
       const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
-      const { accessToken, refreshToken } = await this.authUseCase.refreshToken(
+      const { accessToken, refreshToken } = await this.authService.refreshToken(
         command,
       );
       return { accessToken, refreshToken };
@@ -142,7 +169,7 @@ export class AuthController {
         registerDto.password,
       );
       const { user, accessToken, refreshToken } =
-        await this.authUseCase.register(command);
+        await this.authService.register(command);
       return {
         id: user.id,
         email: user.email,
@@ -165,7 +192,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request) {
     const userId = req.user['id'];
-    await this.authUseCase.logout(userId);
+    await this.authService.logout(userId);
     return { message: 'Logout successful' };
   }
 }
