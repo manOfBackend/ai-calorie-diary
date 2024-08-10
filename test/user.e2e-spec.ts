@@ -31,6 +31,11 @@ describe('UserController (e2e)', () => {
       data: {
         email: 'test@example.com',
         password: 'hashedpassword',
+        firstName: 'Test',
+        lastName: 'User',
+        provider: 'local',
+        providerId: null,
+        profilePicture: null,
         targetCalories: 2000,
       },
     });
@@ -54,6 +59,14 @@ describe('UserController (e2e)', () => {
         .expect((res) => {
           expect(res.body).toHaveProperty('id', testUser.id);
           expect(res.body).toHaveProperty('email', testUser.email);
+          expect(res.body).toHaveProperty('firstName', testUser.firstName);
+          expect(res.body).toHaveProperty('lastName', testUser.lastName);
+          expect(res.body).toHaveProperty('provider', testUser.provider);
+          expect(res.body).toHaveProperty('providerId', testUser.providerId);
+          expect(res.body).toHaveProperty(
+            'profilePicture',
+            testUser.profilePicture,
+          );
           expect(res.body).toHaveProperty(
             'targetCalories',
             testUser.targetCalories,

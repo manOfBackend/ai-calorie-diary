@@ -23,7 +23,6 @@ describe('AuthController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    // 각 테스트 후 데이터 정리
     await prismaService.$transaction(async (prisma) => {
       await prisma.diary.deleteMany();
       await prisma.user.deleteMany();
@@ -140,5 +139,42 @@ describe('AuthController (e2e)', () => {
     //   .get('/auth/me')
     //   .set('Authorization', `Bearer ${accessToken}`)
     //   .expect(401);
+  });
+
+  it('/auth/google (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/auth/google')
+      .expect(302);
+
+    expect(response.header.location).toMatch(
+      /^https:\/\/accounts\.google\.com/,
+    );
+  });
+
+  it('/auth/google/callback (GET)', async () => {
+    // 실제 OAuth 콜백을 시뮬레이션하는 것은 어렵기 때문에,
+    // 이 테스트는 라우트가 존재하는지만 확인합니다.
+    await request(app.getHttpServer()).get('/auth/google/callback').expect(302);
+  });
+
+  it('/auth/oauth/signup (POST)', async () => {
+    const oauthUser = {
+      id: '123',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      provider: 'google',
+      providerId: '123',
+      profilePicture: 'http://example.com/pic.jpg',
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/oauth/signup')
+      .send(oauthUser)
+      .expect(201);
+
+    expect(response.body).toHaveProperty('user');
+    expect(response.body).toHaveProperty('accessToken');
+    expect(response.body).toHaveProperty('refreshToken');
   });
 });
