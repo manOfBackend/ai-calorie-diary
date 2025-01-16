@@ -4,7 +4,7 @@ import { FoodService } from './application/service/food.service';
 import { OpenAIApiAdapter } from './adapter/out/api/openai-api.adapter';
 import { S3Service } from '@common/s3/s3.service';
 import { FOOD_USE_CASE } from './application/port/in/food.use-case';
-import { OpenAIApiPortSymbol } from './application/port/out/openai-api.port';
+import { OpenAIApiPortSymbol } from '@food/application/port/out/openai-api.port';
 
 @Module({
   controllers: [FoodController],

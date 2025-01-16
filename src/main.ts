@@ -5,6 +5,7 @@ import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 import { CustomLoggerService } from '@common/logger/custom-logger.service';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const logger = new CustomLoggerService();
@@ -29,11 +30,15 @@ async function bootstrap() {
     .addTag('food')
     .addBearerAuth()
     .build();
+
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT');
+
   const document = SwaggerModule.createDocument(app, config);
 
   SwaggerModule.setup('api', app, document);
 
   app.enableCors();
-  await app.listen(3001);
+  await app.listen(port);
 }
 bootstrap();

@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@auth/auth.module';
 import { PrismaModule } from '@common/prisma/prisma.module';
 import { DiaryModule } from '@diary/diary.module';
@@ -11,31 +10,43 @@ import { EventSubscriberSymbol } from '@common/events/event-subscriber.interface
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MetricsModule } from '@common/metrics/metrics.module';
 import { MetricsMiddleware } from '@common/metrics/metrics.middleware';
+import { AppConfigModule } from './config/config.module';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    // 설정 모듈
+    AppConfigModule,
+
+    // 이벤트 모듈
     EventEmitterModule.forRoot(),
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 1000,
-        limit: 3,
+
+    // Throttler 모듈
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const throttleConfig = configService.get('throttle');
+        return [
+          {
+            name: 'short',
+            ttl: throttleConfig.short.ttl,
+            limit: throttleConfig.short.limit,
+          },
+          {
+            name: 'medium',
+            ttl: throttleConfig.medium.ttl,
+            limit: throttleConfig.medium.limit,
+          },
+          {
+            name: 'long',
+            ttl: throttleConfig.long.ttl,
+            limit: throttleConfig.long.limit,
+          },
+        ];
       },
-      {
-        name: 'medium',
-        ttl: 10000,
-        limit: 20,
-      },
-      {
-        name: 'long',
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
-    ConfigModule.forRoot({
-      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
-      isGlobal: true,
     }),
+
+    // 기능 모듈
     PrismaModule,
     AuthModule,
     DiaryModule,
