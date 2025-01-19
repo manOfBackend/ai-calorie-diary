@@ -48,6 +48,7 @@ export class AuthController {
       properties: {
         accessToken: { type: 'string' },
         refreshToken: { type: 'string' },
+        accessTokenExpiresAt: { type: 'string' },
         user: {
           type: 'object',
           properties: {
@@ -69,12 +70,12 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     try {
       const command = new LoginCommand(loginDto.email, loginDto.password);
-      const { accessToken, refreshToken, user } = await this.authUseCase.login(
-        command,
-      );
+      const { accessToken, refreshToken, user, accessTokenExpiresAt } =
+        await this.authUseCase.login(command);
       return {
         accessToken,
         refreshToken,
+        accessTokenExpiresAt,
         user: { id: user.id, email: user.email },
       };
     } catch (error) {
@@ -100,10 +101,9 @@ export class AuthController {
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     try {
       const command = new RefreshTokenCommand(refreshTokenDto.refreshToken);
-      const { accessToken, refreshToken } = await this.authUseCase.refreshToken(
-        command,
-      );
-      return { accessToken, refreshToken };
+      const { accessToken, refreshToken, accessTokenExpiresAt } =
+        await this.authUseCase.refreshToken(command);
+      return { accessToken, refreshToken, accessTokenExpiresAt };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }

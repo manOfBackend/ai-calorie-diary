@@ -1,7 +1,7 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -34,7 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return response.status(status).send();
     }
     this.loggerService.error(
-      `${request.method} ${request.url}`,
+      `${request.method} ${request.url} ${request.headers['authorization']}`,
       exception instanceof Error ? exception.stack : '',
       'ExceptionFilter',
     );

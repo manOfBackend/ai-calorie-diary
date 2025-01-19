@@ -6,12 +6,17 @@ import { User } from '@user/domain/user';
 export const AUTH_USE_CASE = 'AUTH_USE_CASE';
 
 export interface AuthUseCase {
-  login(
-    command: LoginCommand,
-  ): Promise<{ accessToken: string; refreshToken: string; user: User }>;
-  refreshToken(
-    command: RefreshTokenCommand,
-  ): Promise<{ accessToken: string; refreshToken: string }>;
+  login(command: LoginCommand): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpiresAt: number;
+    user: User;
+  }>;
+  refreshToken(command: RefreshTokenCommand): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpiresAt: number;
+  }>;
   register(
     command: RegisterCommand,
   ): Promise<{ user: User; accessToken: string; refreshToken: string }>;
